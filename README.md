@@ -1,4 +1,5 @@
 [![Build Status](https://github.com/JuliaGeo/AbstractDatasets.jl/workflows/CI/badge.svg)](https://github.com/JuliaGeo/AbstractDatasets.jl/actions)
+[![documentation dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliageo.github.io/AbstractDatasets.jl/dev/)
 
 
 This package contains abstracts type definition to ensure compatibility of the package [GRIBDatasets](https://github.com/JuliaGeo/GRIBDatasets.jl) and [NCDatasets](https://github.com/Alexander-Barth/NCDatasets.jl) for manipulating GRIB and NetCDF files. This package aims to follow the [Common Data Model](https://docs.unidata.ucar.edu/netcdf-c/current/netcdf_data_model.html) and the [CF (climate and forecast models) Metadata Conventions](https://cfconventions.org/).
