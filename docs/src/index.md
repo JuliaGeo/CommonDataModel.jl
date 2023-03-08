@@ -1,8 +1,6 @@
-```@meta
-CurrentModule = AbstractDatasets
-```
 
-## Index
+## Abstract types
 
-```@index
+```@autodocs
+Modules = [AbstractDatasets]
 ```
