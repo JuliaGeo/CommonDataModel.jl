@@ -1,6 +1,6 @@
 import NCDatasets
 import GRIBDatasets
-using AbstractDatasets
+using CommonDataModel
 using Test
 
 datadir = joinpath(dirname(pathof(GRIBDatasets)),"..","test","sample-data")

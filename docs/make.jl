@@ -1,13 +1,13 @@
 using Documenter: Documenter, makedocs, deploydocs
-using AbstractDatasets: AbstractDatasets
+using CommonDataModel: CommonDataModel
 
 makedocs(;
-    modules=[AbstractDatasets],
-    repo="https://github.com/JuliaGeo/AbstractDatasets.jl/blob/{commit}{path}#{line}",
-    sitename="AbstractDatasets.jl",
+    modules=[CommonDataModel],
+    repo="https://github.com/JuliaGeo/CommonDataModel.jl/blob/{commit}{path}#{line}",
+    sitename="CommonDataModel.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
-        canonical="https://juliageo.github.io/AbstractDatasets.jl",
+        canonical="https://juliageo.github.io/CommonDataModel.jl",
         assets=String[],
     ),
     pages=[
@@ -16,5 +16,5 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/JuliaGeo/AbstractDatasets.jl",
+    repo="github.com/JuliaGeo/CommonDataModel.jl",
 )

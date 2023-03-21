@@ -1,9 +1,9 @@
-name = "AbstractDatasets"
+name = "CommonDataModel"
 uuid = "1fbeeb36-5f17-413c-809b-666fb144f157"
 authors = ["Alexander Barth <barth.alexander@gmail.com>"]
 keywords = ["netcdf", "GRIB", "climate and forecast conventions", "oceanography", "meteorology", "climatology", "opendap"]
 license = "MIT"
-desc = "AbstractDatasets is a module that defines types common to NetCDF and GRIB data"
+desc = "CommonDataModel is a module that defines types common to NetCDF and GRIB data"
 version = "0.1.0"
 
 [compat]

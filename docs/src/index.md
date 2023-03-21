@@ -2,5 +2,5 @@
 ## Abstract types
 
 ```@autodocs
-Modules = [AbstractDatasets]
+Modules = [CommonDataModel]
 ```
