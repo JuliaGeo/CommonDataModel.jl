@@ -6,7 +6,6 @@ This package contains abstracts type definition to ensure compatibility of the p
 
 This package is at a very early state of developpement.
 
-
 Here is minimal example for loading GRIB or NetCDF files.
 
 ``` julia
