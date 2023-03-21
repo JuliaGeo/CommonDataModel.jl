@@ -1,11 +1,11 @@
-module AbstractDatasets
+module CommonDataModel
 
 """
 
 `AbstractDataset` is a collection of multidimensional variables (for example a
 NetCDF or GRIB file)
 
-A data set `ds` of a type derived from `AbstractDatasets` should implemented at minimum:
+A data set `ds` of a type derived from `AbstractDataset` should implemented at minimum:
 
 * `Base.key(ds)`: return a list of variable names a strings
 * `Base.getindex(ds,varname::String)`: return an array-like data structure (derived from `AbstractDatasetVariable`) of the variables corresponding to `varname`. This array-like data structure should follow the CF semantics.
@@ -30,4 +30,4 @@ dimnames(av::AbstractDatasetVariable) = String[]
 # specialize this function if there are unlimited dimenions
 unlimited(ad::AbstractDataset) = ()
 
-end # module AbstractDatasets
+end # module CommonDataModel
