@@ -13,4 +13,4 @@ tmp_filename = tempname()
     @assert isfile(tmp_filename)
 end
 
-
+NCDatasets.Dataset(tmp_filename)

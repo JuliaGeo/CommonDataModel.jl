@@ -1,5 +1,9 @@
 module CommonDataModel
 
+using Printf
+using Preferences
+import Base: isopen
+
 """
 
 `AbstractDataset` is a collection of multidimensional variables (for example a
@@ -17,17 +21,17 @@ end
 
 
 """
-`AbstractDatasetVariable{T,N}` is a subclass of `AbstractArray{T, N}`. A variable `v` of a type derived from `AbstractDatasetVariable` should implement:
+`AbstractVariable{T,N}` is a subclass of `AbstractArray{T, N}`. A variable `v` of a type derived from `AbstractVariable` should implement:
 
 * `v.attrib`: should be a Dict-like data structure with all variable attribute names as keys and the corresponding value
 """
-abstract type AbstractDatasetVariable{T,N} <: AbstractArray{T, N}
+abstract type AbstractVariable{T,N} <: AbstractArray{T, N}
 end
 
 
-dimnames(av::AbstractDatasetVariable) = String[]
-
-# specialize this function if there are unlimited dimenions
-unlimited(ad::AbstractDataset) = ()
+include("dataset.jl")
+include("variable.jl")
+include("attribute.jl")
+include("dimension.jl")
 
 end # module CommonDataModel

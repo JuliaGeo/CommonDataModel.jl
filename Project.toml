@@ -6,6 +6,10 @@ license = "MIT"
 desc = "CommonDataModel is a module that defines types common to NetCDF and GRIB data"
 version = "0.1.0"
 
+[deps]
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+Preferences = "21216c6a-2e73-6563-6e65-726566657250"
+
 [compat]
 julia = "1.6"
 
