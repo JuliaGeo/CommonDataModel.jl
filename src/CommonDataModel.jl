@@ -24,6 +24,8 @@ end
 `AbstractVariable{T,N}` is a subclass of `AbstractArray{T, N}`. A variable `v` of a type derived from `AbstractVariable` should implement:
 
 * `v.attrib`: should be a Dict-like data structure with all variable attribute names as keys and the corresponding value
+* `name(v)`: should be the name of variable within the dataset
+* `dimnames(v)`: should be a iterable data structure with all dimension names
 """
 abstract type AbstractVariable{T,N} <: AbstractArray{T, N}
 end
