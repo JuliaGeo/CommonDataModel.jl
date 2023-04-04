@@ -16,12 +16,12 @@ only a single group, this will be always the root group `"/"`.
 groupname(ds::AbstractDataset) = "/"
 
 """
-    CommonDatamodel.groups(ds::AbstractDataset)
+    CommonDatamodel.groupnames(ds::AbstractDataset)
 
-All the group names of the data set. For a data set containing
+All the subgroup names of the data set `ds`. For a data set containing
 only a single group, this will be an empty vector of `String`.
 """
-groups(ds::AbstractDataset) = String[]
+groupnames(ds::AbstractDataset) = ()
 
 """
     CommonDatamodel.unlimited(ds::AbstractDataset)
@@ -81,11 +81,11 @@ function Base.show(io::IO,ds::AbstractDataset)
     end
 
     # groups
-    groupnames = groups(ds)
+    gnames = groupnames(ds)
 
-    if length(groupnames) > 0
+    if length(gnames) > 0
         printstyled(io, indent, "Groups\n",color=section_color[])
-        for groupname in groupnames
+        for groupname in gnames
             show(IOContext(io,:level=>level+2),group(ds,groupname))
         end
     end
