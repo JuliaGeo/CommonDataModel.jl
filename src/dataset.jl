@@ -69,7 +69,7 @@ function Base.show(io::IO,ds::AbstractDataset)
     dspath = path(ds)
     printstyled(io, indent, "Dataset: ",dspath,"\n", color=section_color[])
 
-    print(io,indent,"Group: ",groupname(ds),"\n")
+    print(io,indent,"Group: ",name(ds),"\n")
     print(io,"\n")
 
     # show dimensions
