@@ -27,7 +27,7 @@ varnames(ds::AbstractDataset) = ()
 Return the variable with the name `variablename` from the data set `ds`.
 """
 function variable(ds::AbstractDataset,variablename::AbstractString)
-    error("no variable $variablename in $(path(ds))")
+    error("no variable $variablename in $(path(ds)) (abstract method)")
 end
 
 function defVar(ds::AbstractDataset,name::AbstractString,type,dimnames)

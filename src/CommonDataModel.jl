@@ -1,5 +1,7 @@
 module CommonDataModel
 
+using CFTime
+using Dates
 using Printf
 using Preferences
 import Base: isopen
@@ -37,6 +39,7 @@ end
 
 include("dataset.jl")
 include("variable.jl")
+include("cfvariable.jl")
 include("attribute.jl")
 include("dimension.jl")
 
