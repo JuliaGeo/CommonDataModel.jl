@@ -30,7 +30,7 @@ function variable(ds::AbstractDataset,variablename::AbstractString)
     error("no variable $variablename in $(path(ds))")
 end
 
-function defVar(ds::AbstractDataset,name::AbstractString,dimnames)
+function defVar(ds::AbstractDataset,name::AbstractString,type,dimnames)
     error("unimplemnted for abstract type")
 end
 
