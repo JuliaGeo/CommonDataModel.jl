@@ -23,6 +23,17 @@ Base.size(v::CFVariable) = size(v.var)
 
 Base.show(io::IO,v::CFVariable) = Base.show(io,v.var)
 
+attribnames(v::CFVariable) = attribnames(v.var)
+attrib(v::CFVariable,name::AbstractString) = attrib(v.var,name)
+
+dimnames(v::CFVariable) = dimnames(v.var)
+dim(v::CFVariable,name::AbstractString) = dim(v.var,name)
+
+# necessary for IJulia if showing a variable from a closed file
+Base.show(io::IO,::MIME"text/plain",v::AbstractVariable) = show(io,v)
+
+Base.display(v::AbstractVariable) = show(stdout,v)
+
 
 """
     v = cfvariable(ds::NCDataset,varname::AbstractString; <attrib> = <value>)

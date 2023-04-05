@@ -4,7 +4,7 @@ using CFTime
 using Dates
 using Printf
 using Preferences
-import Base: isopen
+import Base: isopen, show, display
 using DataStructures
 
 """
