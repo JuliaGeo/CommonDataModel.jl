@@ -8,12 +8,12 @@ path(ds::AbstractDataset) = ""
 
 
 """
-    CommonDatamodel.groupname(ds::AbstractDataset)
+    CommonDatamodel.name(ds::AbstractDataset)
 
 Name of the group of the data set `ds`. For a data set containing
 only a single group, this will be always the root group `"/"`.
 """
-groupname(ds::AbstractDataset) = "/"
+name(ds::AbstractDataset) = "/"
 
 """
     CommonDatamodel.groupnames(ds::AbstractDataset)
@@ -22,6 +22,29 @@ All the subgroup names of the data set `ds`. For a data set containing
 only a single group, this will be an empty vector of `String`.
 """
 groupnames(ds::AbstractDataset) = ()
+
+
+"""
+    CommonDatamodel.group(ds::AbstractDataset,groupname::AbstractString)
+
+Return the sub-group data set with the name `groupname`.
+"""
+function group(ds::AbstractDataset,groupname::AbstractString)
+    error("no group $groupname in $(path(ds))")
+end
+
+function defGroup(ds::AbstractDataset,name::AbstractString)
+    error("unimplemnted for abstract type")
+end
+
+"""
+    CommonDatamodel.groups(ds::AbstractDataset)
+
+Return all sub-group data as a dict-like object.
+"""
+groups(ds::AbstractDataset) =
+    OrderedDict((dn,group(ds,dn)) for dn in groupnames(ds))
+
 
 """
     CommonDatamodel.unlimited(ds::AbstractDataset)
@@ -32,14 +55,6 @@ unlimited(ad::AbstractDataset) = ()
 
 Base.isopen(ds::AbstractDataset) = true
 
-"""
-    CommonDatamodel.group(ds::AbstractDataset,groupname::AbstractString)
-
-Return the sub-group data set with the name `groupname`.
-"""
-function group(ds::AbstractDataset,groupname::AbstractString)
-    error("no group $groupname in $(path(ds))")
-end
 
 
 function Base.show(io::IO,ds::AbstractDataset)
@@ -58,8 +73,8 @@ function Base.show(io::IO,ds::AbstractDataset)
     print(io,"\n")
 
     # show dimensions
-    if length(ds.dim) > 0
-        show_dim(io, ds.dim)
+    if length(dimnames(ds)) > 0
+        show_dim(io, dims(ds))
         print(io,"\n")
     end
 
@@ -75,9 +90,9 @@ function Base.show(io::IO,ds::AbstractDataset)
     end
 
     # global attribues
-    if length(ds.attrib) > 0
+    if length(attribnames(ds)) > 0
         printstyled(io, indent, "Global attributes\n",color=section_color[])
-        show_attrib(IOContext(io,:level=>level+2),ds.attrib);
+        show_attrib(IOContext(io,:level=>level+2),attribs(ds));
     end
 
     # groups

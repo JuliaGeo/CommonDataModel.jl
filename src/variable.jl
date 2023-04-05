@@ -11,7 +11,30 @@ name(v::AbstractVariable) = ""
 
 Return an iterable of the dimension names of the variable `v`.
 """
-dimnames(av::AbstractVariable) = String[]
+dimnames(av::AbstractVariable) = ()
+
+
+"""
+    CommonDatamodel.varnames(ds::AbstractDataset)
+
+Return an iterable of all the variable name.
+"""
+varnames(ds::AbstractDataset) = ()
+
+"""
+    CommonDatamodel.variable(ds::AbstractDataset,variablename::AbstractString)
+
+Return the variable with the name `variablename` from the data set `ds`.
+"""
+function variable(ds::AbstractDataset,variablename::AbstractString)
+    error("no variable $variablename in $(path(ds))")
+end
+
+function defVar(ds::AbstractDataset,name::AbstractString,dimnames)
+    error("unimplemnted for abstract type")
+end
+
+
 
 
 function Base.show(io::IO,v::AbstractVariable)
@@ -33,7 +56,7 @@ function Base.show(io::IO,v::AbstractVariable)
 
         if length(v.attrib) > 0
             print(io,indent,"  Attributes:\n")
-            show_attrib(IOContext(io,:level=>level+3),v.attrib)
+            show_attrib(IOContext(io,:level=>level+3),attribs(v))
         end
     catch err
         print(io,"Variable (dataset closed)")

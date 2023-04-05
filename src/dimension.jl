@@ -1,3 +1,36 @@
+
+"""
+    CommonDatamodel.dimnames(ds::AbstractDataset)
+
+Return an iterable of all dimension names in `ds`.
+"""
+dimnames(ds::Union{AbstractDataset,AbstractVariable}) = ()
+
+
+"""
+    CommonDatamodel.dim(ds::AbstractDataset,dimname::AbstractString)
+
+Return the length of the dimension `dimname` in the data set `ds`.
+"""
+function dim(ds::Union{AbstractDataset,AbstractVariable},dimname::AbstractString)
+    error("no dimension $dimname in $(path(ds))")
+end
+
+function defDim(ds::AbstractDataset,name::AbstractString,len::Integer)
+    error("unimplemnted for abstract type")
+end
+
+
+"""
+    CommonDatamodel.dims(ds::Union{AbstractDataset,AbstractVariable})
+
+Return a dict-like of all dimensions and their corresponding length defined in the the data set `ds` (or variable).
+"""
+dims(ds::Union{AbstractDataset,AbstractVariable}) =
+    OrderedDict((dn,dim(ds,dn)) for dn in dimnames(ds))
+
+
+
 """
     CommonDatamodel.show_dim(io,dim)
 
