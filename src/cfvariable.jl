@@ -21,8 +21,8 @@ Return a tuple of integers with the size of the variable `var`.
 """
 Base.size(v::CFVariable) = size(v.var)
 
-attribnames(v::CFVariable) = attribnames(v.var)
-attrib(v::CFVariable,name::AbstractString) = attrib(v.var,name)
+attribnames(v::CFVariable) = keys(v.attrib)
+attrib(v::CFVariable,name::AbstractString) = v.attrib[name]
 
 dimnames(v::CFVariable) = dimnames(v.var)
 dim(v::CFVariable,name::AbstractString) = dim(v.var,name)
