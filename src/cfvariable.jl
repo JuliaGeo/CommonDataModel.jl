@@ -91,17 +91,18 @@ close(ds)
 function cfvariable(ds,
                     varname;
                     _v = variable(ds,varname),
+                    attrib = _v.attrib,
                     # special case for bounds variable who inherit
                     # units and calendar from parent variables
                     _parentname = boundsParentVar(ds,varname),
-                    fillvalue = get(_v.attrib,"_FillValue",nothing),
+                    fillvalue = get(attrib,"_FillValue",nothing),
                     # missing_value can be a vector
-                    missing_value = get(_v.attrib,"missing_value",eltype(_v)[]),
-                    #valid_min = get(_v.attrib,"valid_min",nothing),
-                    #valid_max = get(_v.attrib,"valid_max",nothing),
-                    #valid_range = get(_v.attrib,"valid_range",nothing),
-                    scale_factor = get(_v.attrib,"scale_factor",nothing),
-                    add_offset = get(_v.attrib,"add_offset",nothing),
+                    missing_value = get(attrib,"missing_value",eltype(_v)[]),
+                    #valid_min = get(attrib,"valid_min",nothing),
+                    #valid_max = get(attrib,"valid_max",nothing),
+                    #valid_range = get(attrib,"valid_range",nothing),
+                    scale_factor = get(attrib,"scale_factor",nothing),
+                    add_offset = get(attrib,"add_offset",nothing),
                     # look also at parent if defined
                     units = _getattrib(ds,_v,_parentname,"units",nothing),
                     calendar = _getattrib(ds,_v,_parentname,"calendar",nothing),
@@ -161,8 +162,8 @@ function cfvariable(ds,
 
     rettype = _get_rettype(ds, calendar, fillvalue, missing_value, scaledtype)
 
-    return CFVariable{rettype,ndims(v),typeof(v),typeof(_v.attrib),typeof(storage_attrib)}(
-        v,_v.attrib,storage_attrib)
+    return CFVariable{rettype,ndims(v),typeof(v),typeof(attrib),typeof(storage_attrib)}(
+        v,attrib,storage_attrib)
 
 end
 
