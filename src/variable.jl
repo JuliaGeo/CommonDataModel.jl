@@ -44,11 +44,16 @@ function Base.show(io::IO,v::AbstractVariable)
     try
         dims = dimnames(v)
         sz = size(v)
-
         printstyled(io, indent, name(v),color=variable_color[])
         if length(sz) > 0
             print(io,indent," (",join(sz,delim),")\n")
-            print(io,indent,"  Datatype:    ",eltype(v),"\n")
+
+            print(io,indent,"  Datatype:    ")
+            printstyled(io,eltype(v),bold=true)
+            if v isa CFVariable
+                print(io," (",eltype(v.var),")")
+            end
+            print(io,"\n")
             print(io,indent,"  Dimensions:  ",join(dims,delim),"\n")
         else
             print(io,indent,"\n")
