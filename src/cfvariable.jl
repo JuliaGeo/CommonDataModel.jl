@@ -21,8 +21,6 @@ Return a tuple of integers with the size of the variable `var`.
 """
 Base.size(v::CFVariable) = size(v.var)
 
-# Base.show(io::IO,v::CFVariable) = Base.show(io,v)
-
 attribnames(v::CFVariable) = keys(v.attrib)
 attrib(v::CFVariable,name::AbstractString) = v.attrib[name]
 
