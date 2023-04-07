@@ -21,10 +21,10 @@ Return a tuple of integers with the size of the variable `var`.
 """
 Base.size(v::CFVariable) = size(v.var)
 
-Base.show(io::IO,v::CFVariable) = Base.show(io,v.var)
+# Base.show(io::IO,v::CFVariable) = Base.show(io,v)
 
-attribnames(v::CFVariable) = attribnames(v.var)
-attrib(v::CFVariable,name::AbstractString) = attrib(v.var,name)
+attribnames(v::CFVariable) = keys(v.attrib)
+attrib(v::CFVariable,name::AbstractString) = v.attrib[name]
 
 dimnames(v::CFVariable) = dimnames(v.var)
 dim(v::CFVariable,name::AbstractString) = dim(v.var,name)
@@ -94,6 +94,7 @@ function cfvariable(ds,
                     # special case for bounds variable who inherit
                     # units and calendar from parent variables
                     _parentname = boundsParentVar(ds,varname),
+                    attrib = _v.attrib,
                     fillvalue = get(_v.attrib,"_FillValue",nothing),
                     # missing_value can be a vector
                     missing_value = get(_v.attrib,"missing_value",eltype(_v)[]),
@@ -162,7 +163,7 @@ function cfvariable(ds,
     rettype = _get_rettype(ds, calendar, fillvalue, missing_value, scaledtype)
 
     return CFVariable{rettype,ndims(v),typeof(v),typeof(_v.attrib),typeof(storage_attrib)}(
-        v,_v.attrib,storage_attrib)
+        v,attrib,storage_attrib)
 
 end
 
