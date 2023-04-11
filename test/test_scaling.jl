@@ -34,8 +34,7 @@ io = IOBuffer()
 CDM.show(io,"text/plain",v)
 @test occursin("Attributes",String(take!(io)))
 
-v = @test_warn "numeric" defVar(ds,"temp2",data,("lon","lat"),attrib = Dict(
-    "missing_value" => "bad_idea"))
+v = @test_logs (:warn,r"numeric") defVar(ds,"temp2",data,("lon","lat"),attrib = Dict("missing_value" => "bad_idea"))
 
 struct MemoryVariable{T,N} <: CDM.AbstractVariable{T,N}
     name::String
