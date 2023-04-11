@@ -13,6 +13,14 @@ out = String(take!(io))
 @test occursin("Global attributes",out)
 @test occursin("CF-",out)
 
+# dimension
+
+@test CDM.dims(ds)["lon"] == 120
+@test CDM.dim(ds,"lon") == 120
+@test "lon" in CDM.dimnames(ds)
+
+
+
 #=
 tmp_filename = tempname()
 NCDatasets.write(tmp_filename,ds)

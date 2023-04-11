@@ -34,7 +34,7 @@ function group(ds::AbstractDataset,groupname::AbstractString)
 end
 
 function defGroup(ds::AbstractDataset,name::AbstractString)
-    error("unimplemnted for abstract type")
+    error("unimplemented for abstract type")
 end
 
 """
