@@ -19,5 +19,8 @@ dd = DummyEmptyDataset();
 @test CDM.path(dd) == ""
 
 @test CDM.groupnames(dd) == ()
-@test_throws "no group" CDM.group(dd,"does_not_exist")
-@test_throws "unimplemented" CDM.defGroup(dd,"does_not_exist")
+# not available in julia 1.6
+#@test_throws "no group" CDM.group(dd,"does_not_exist")
+#@test_throws "unimplemented" CDM.defGroup(dd,"does_not_exist")
+@test_throws Exception CDM.group(dd,"does_not_exist")
+@test_throws Exception CDM.defGroup(dd,"does_not_exist")

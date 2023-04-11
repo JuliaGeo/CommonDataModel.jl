@@ -20,8 +20,6 @@ out = String(take!(io))
 @test "lon" in CDM.dimnames(ds)
 
 
-
-#=
 tmp_filename = tempname()
 NCDatasets.write(tmp_filename,ds)
 
@@ -37,4 +35,3 @@ dsnc = NCDatasets.Dataset(tmp_filename)
 
 close(dsnc)
 # close(ds)
-=#
