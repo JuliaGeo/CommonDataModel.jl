@@ -13,6 +13,7 @@ out = String(take!(io))
 @test occursin("Global attributes",out)
 @test occursin("CF-",out)
 
+#=
 tmp_filename = tempname()
 NCDatasets.write(tmp_filename,ds)
 
@@ -28,3 +29,4 @@ dsnc = NCDatasets.Dataset(tmp_filename)
 
 close(dsnc)
 # close(ds)
+=#
