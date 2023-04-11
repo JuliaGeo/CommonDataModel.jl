@@ -2,6 +2,7 @@ using NCDatasets
 using Test
 import CommonDataModel as CDM
 using DataStructures
+using Dates
 
 fname = tempname()
 ds = NCDataset(fname,"c")
@@ -50,10 +51,12 @@ struct MemoryDataset <: CDM.AbstractDataset
     unlimited::Vector{String}
 end
 
-data = randn(30,31)
+data = rand(-100:100,30,31)
 mv = MemoryVariable("data",["lon","lat"], data, OrderedDict{String,Any}(
     "units" => "days since 2000-01-01"))
 
+Base.getindex(v::MemoryVariable,ij...) = v.data[ij...]
+Base.setindex!(v::MemoryVariable,data,ij...) = v.data[ij...] = data
 CDM.name(v::MemoryVariable) = v.name
 CDM.dimnames(v::MemoryVariable) = v.dimnames
 Base.size(v::MemoryVariable) = size(v.data)
@@ -80,6 +83,12 @@ CDM.dim(md::MemoryDataset,name::AbstractString) = md.dim[name]
 CDM.attribnames(md::Union{MemoryDataset,MemoryVariable}) = keys(md.attrib)
 CDM.attrib(md::Union{MemoryDataset,MemoryVariable},name::AbstractString) = md.attrib[name]
 
+
+time_origin = DateTime(2000,1,1)
+@test md["data"][1,1] == time_origin + Dates.Millisecond(data[1,1]*24*60*60*1000)
+
+md["data"][1,2] = DateTime(2000,2,1)
+@test md["data"].var[1,2] == Dates.value(md["data"][1,2] - time_origin) ÷ (24*60*60*1000)
 
 io = IOBuffer()
 CDM.show(io,md)
