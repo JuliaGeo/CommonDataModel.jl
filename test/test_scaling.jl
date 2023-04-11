@@ -1,6 +1,7 @@
 using NCDatasets
 using Test
-
+import CommonDataModel as CDM
+using DataStructures
 
 fname = tempname()
 ds = NCDataset(fname,"c")
@@ -24,4 +25,65 @@ v.var[1,1] = 1
 @test ismissing(v[2,2])
 @test fillvalue(v) == fill_value
 
-close(ds)
+@test collect(CDM.dimnames(v)) == ["lon","lat"]
+
+#@test CDM.dim(v,"lon") == 10
+
+io = IOBuffer()
+CDM.show(io,"text/plain",v)
+@test occursin("Attributes",String(take!(io)))
+
+v = @test_warn "numeric" defVar(ds,"temp2",data,("lon","lat"),attrib = Dict(
+    "missing_value" => "bad_idea"))
+
+struct MemoryVariable{T,N} <: CDM.AbstractVariable{T,N}
+    name::String
+    dimnames::Vector{String}
+    data::Array{T,N}
+    attrib::OrderedDict{String,Any}
+end
+
+struct MemoryDataset <: CDM.AbstractDataset
+    dim::OrderedDict{String,Int}
+    variables::OrderedDict{String,MemoryVariable}
+    attrib::OrderedDict{String,Any}
+    unlimited::Vector{String}
+end
+
+data = randn(30,31)
+mv = MemoryVariable("data",["lon","lat"], data, OrderedDict{String,Any}(
+    "units" => "days since 2000-01-01"))
+
+CDM.name(v::MemoryVariable) = v.name
+CDM.dimnames(v::MemoryVariable) = v.dimnames
+Base.size(v::MemoryVariable) = size(v.data)
+
+@test "lon" in CDM.dimnames(mv)
+@test CDM.name(mv) == "data"
+
+md = MemoryDataset(
+    OrderedDict{String,Int}(
+        "lon" => 30,
+        "lat" => 31),
+    OrderedDict{String,MemoryVariable}(
+        "data" => mv),
+    OrderedDict{String,Any}(
+        "history" => "lala"),
+    String[])
+
+import Base
+Base.keys(md::MemoryDataset) = keys(md.variables)
+CDM.variable(md::MemoryDataset,varname::AbstractString) = md.variables[varname]
+Base.getindex(md::MemoryDataset,varname::AbstractString) = CDM.cfvariable(md,varname)
+CDM.dimnames(md::MemoryDataset) = keys(md.dim)
+CDM.dim(md::MemoryDataset,name::AbstractString) = md.dim[name]
+CDM.attribnames(md::Union{MemoryDataset,MemoryVariable}) = keys(md.attrib)
+CDM.attrib(md::Union{MemoryDataset,MemoryVariable},name::AbstractString) = md.attrib[name]
+
+
+io = IOBuffer()
+CDM.show(io,md)
+@test occursin("Attributes",String(take!(io)))
+
+
+#close(ds)

@@ -64,6 +64,7 @@ function Base.show(io::IO,v::AbstractVariable)
             show_attrib(IOContext(io,:level=>level+3),attribs(v))
         end
     catch err
+        @debug "error in show" err
         print(io,"Variable (dataset closed)")
     end
 end
