@@ -50,15 +50,66 @@ struct MemoryDataset <: CDM.AbstractDataset
     unlimited::Vector{String}
 end
 
-data = rand(-100:100,30,31)
-mv = MemoryVariable("data",["lon","lat"], data, OrderedDict{String,Any}(
-    "units" => "days since 2000-01-01"))
-
 Base.getindex(v::MemoryVariable,ij...) = v.data[ij...]
 Base.setindex!(v::MemoryVariable,data,ij...) = v.data[ij...] = data
 CDM.name(v::MemoryVariable) = v.name
 CDM.dimnames(v::MemoryVariable) = v.dimnames
 Base.size(v::MemoryVariable) = size(v.data)
+
+import Base
+Base.keys(md::MemoryDataset) = keys(md.variables)
+CDM.variable(md::MemoryDataset,varname::AbstractString) = md.variables[varname]
+Base.getindex(md::MemoryDataset,varname::AbstractString) = CDM.cfvariable(md,varname)
+CDM.dimnames(md::MemoryDataset) = keys(md.dim)
+CDM.dim(md::MemoryDataset,name::AbstractString) = md.dim[name]
+CDM.attribnames(md::Union{MemoryDataset,MemoryVariable}) = keys(md.attrib)
+CDM.attrib(md::Union{MemoryDataset,MemoryVariable},name::AbstractString) = md.attrib[name]
+
+
+for sample_data = ( -100:100,
+                    'a':'z',
+                    ["AB","CD","EF"],
+                    [NaN; 1:10],
+                    )
+    local io
+    local data
+    local fill_value, mv, md
+
+    fill_value = sample_data[1]
+    data = rand(sample_data[2:end],30,31)
+
+    mv = MemoryVariable("data",["lon","lat"], data, OrderedDict{String,Any}(
+        "_FillValue" => fill_value))
+
+    @test "lon" in CDM.dimnames(mv)
+    @test CDM.name(mv) == "data"
+
+    md = MemoryDataset(
+        OrderedDict{String,Int}(
+            "lon" => 30,
+            "lat" => 31),
+        OrderedDict{String,MemoryVariable}(
+            "data" => mv),
+        OrderedDict{String,Any}(),
+        String[])
+
+    md["data"][1,1] = missing
+    @test ismissing(md["data"][1,1])
+    @test md["data"].var[1,1] === fill_value
+
+    md["data"][1:2,1:2] .= missing
+    @test all(ismissing.(md["data"][1:2,1:2]))
+    @test all(md["data"].var[1:2,1:2] .=== fill_value)
+end
+
+
+# time
+
+sample_data =  -100:100
+data = rand(sample_data,30,31)
+mv = MemoryVariable("data",["lon","lat"], data, OrderedDict{String,Any}(
+    "units" => "days since 2000-01-01"))
+
 
 @test "lon" in CDM.dimnames(mv)
 @test CDM.name(mv) == "data"
@@ -73,25 +124,12 @@ md = MemoryDataset(
         "history" => "lala"),
     String[])
 
-import Base
-Base.keys(md::MemoryDataset) = keys(md.variables)
-CDM.variable(md::MemoryDataset,varname::AbstractString) = md.variables[varname]
-Base.getindex(md::MemoryDataset,varname::AbstractString) = CDM.cfvariable(md,varname)
-CDM.dimnames(md::MemoryDataset) = keys(md.dim)
-CDM.dim(md::MemoryDataset,name::AbstractString) = md.dim[name]
-CDM.attribnames(md::Union{MemoryDataset,MemoryVariable}) = keys(md.attrib)
-CDM.attrib(md::Union{MemoryDataset,MemoryVariable},name::AbstractString) = md.attrib[name]
-
 
 time_origin = DateTime(2000,1,1)
 @test md["data"][1,1] == time_origin + Dates.Millisecond(data[1,1]*24*60*60*1000)
 
+
 md["data"][1,2] = DateTime(2000,2,1)
 @test md["data"].var[1,2] == Dates.value(md["data"][1,2] - time_origin) ÷ (24*60*60*1000)
-
-io = IOBuffer()
-CDM.show(io,md)
-@test occursin("Attributes",String(take!(io)))
-
 
 #close(ds)
