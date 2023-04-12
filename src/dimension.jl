@@ -20,7 +20,7 @@ function dim(ds::AbstractDataset,dimname::AbstractString)
     error("no dimension $dimname in $(path(ds))")
 end
 
-function defDim(ds::AbstractDataset,name::AbstractString,len::Integer)
+function defDim(ds::AbstractDataset,name::AbstractString,len)
     error("unimplemnted for abstract type")
 end
 

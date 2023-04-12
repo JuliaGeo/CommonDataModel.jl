@@ -4,6 +4,8 @@ import CommonDataModel as CDM
 using DataStructures
 using Dates
 
+include("memory_dataset.jl")
+
 fname = tempname()
 ds = NCDataset(fname,"c")
 
@@ -36,62 +38,34 @@ CDM.show(io,"text/plain",v)
 
 v = @test_logs (:warn,r"numeric") defVar(ds,"temp2",data,("lon","lat"),attrib = Dict("missing_value" => "bad_idea"))
 
-struct MemoryVariable{T,N} <: CDM.AbstractVariable{T,N}
-    name::String
-    dimnames::Vector{String}
-    data::Array{T,N}
-    attrib::OrderedDict{String,Any}
-end
-
-struct MemoryDataset <: CDM.AbstractDataset
-    dim::OrderedDict{String,Int}
-    variables::OrderedDict{String,MemoryVariable}
-    attrib::OrderedDict{String,Any}
-    unlimited::Vector{String}
-end
-
-Base.getindex(v::MemoryVariable,ij...) = v.data[ij...]
-Base.setindex!(v::MemoryVariable,data,ij...) = v.data[ij...] = data
-CDM.name(v::MemoryVariable) = v.name
-CDM.dimnames(v::MemoryVariable) = v.dimnames
-Base.size(v::MemoryVariable) = size(v.data)
-
-import Base
-Base.keys(md::MemoryDataset) = keys(md.variables)
-CDM.variable(md::MemoryDataset,varname::AbstractString) = md.variables[varname]
-Base.getindex(md::MemoryDataset,varname::AbstractString) = CDM.cfvariable(md,varname)
-CDM.dimnames(md::MemoryDataset) = keys(md.dim)
-CDM.dim(md::MemoryDataset,name::AbstractString) = md.dim[name]
-CDM.attribnames(md::Union{MemoryDataset,MemoryVariable}) = keys(md.attrib)
-CDM.attrib(md::Union{MemoryDataset,MemoryVariable},name::AbstractString) = md.attrib[name]
-
-
 for sample_data = ( -100:100,
                     'a':'z',
                     ["AB","CD","EF"],
                     [NaN; 1:10],
                     )
-    local io
-    local data
-    local fill_value, mv, md
+
+    local io, data, fill_value, mv, md, add_offset, scale_factor
 
     fill_value = sample_data[1]
     data = rand(sample_data[2:end],30,31)
 
-    mv = MemoryVariable("data",["lon","lat"], data, OrderedDict{String,Any}(
-        "_FillValue" => fill_value))
+    md = MemoryDataset()
+    CDM.defDim(md,"lon",size(data,1))
+    CDM.defDim(md,"lat",size(data,2))
+    add_offset = 1
+    scale_factor = 10
+
+    mv = CDM.defVar(md,"data",eltype(data),("lon","lat"), attrib =
+        OrderedDict{String,Any}(
+            "_FillValue" => fill_value,
+            "add_offset" => add_offset,
+            "scale_factor" => scale_factor,
+        ))
+
+    mv.var[:,:] .= data
 
     @test "lon" in CDM.dimnames(mv)
     @test CDM.name(mv) == "data"
-
-    md = MemoryDataset(
-        OrderedDict{String,Int}(
-            "lon" => 30,
-            "lat" => 31),
-        OrderedDict{String,MemoryVariable}(
-            "data" => mv),
-        OrderedDict{String,Any}(),
-        String[])
 
     md["data"][1,1] = missing
     @test ismissing(md["data"][1,1])
@@ -100,6 +74,21 @@ for sample_data = ( -100:100,
     md["data"][1:2,1:2] .= missing
     @test all(ismissing.(md["data"][1:2,1:2]))
     @test all(md["data"].var[1:2,1:2] .=== fill_value)
+
+    if eltype(data) <: Number
+        mv.var[3,3] = 3
+        @test mv[3,3] == scale_factor * 3 + add_offset
+
+        mv[3,3] = scale_factor * 4 + add_offset
+        @test mv.var[3,3] == 4
+    elseif eltype(data) == Char
+        # ignore scale_factor and add_offset
+        mv.var[3,3] = 'z'
+        @test mv[3,3] == 'z'
+
+        mv[3,3] = 'y'
+        @test mv.var[3,3] == 'y'
+    end
 end
 
 
@@ -107,23 +96,24 @@ end
 
 sample_data =  -100:100
 data = rand(sample_data,30,31)
-mv = MemoryVariable("data",["lon","lat"], data, OrderedDict{String,Any}(
+
+md = MemoryDataset()
+CDM.defDim(md,"lon",size(data,1))
+CDM.defDim(md,"lat",size(data,2))
+
+
+mv = CDM.defVar(md,"data",eltype(data),("lon","lat"), attrib = OrderedDict{String,Any}(
     "units" => "days since 2000-01-01"))
 
+mv.var[:,:] .= data
+
+@test CDM.dim(md,"lon") == size(data,1)
+@test CDM.dim(mv,"lon") == size(data,1)
+
+CDM.defAttrib(md,"history", "lala")
 
 @test "lon" in CDM.dimnames(mv)
 @test CDM.name(mv) == "data"
-
-md = MemoryDataset(
-    OrderedDict{String,Int}(
-        "lon" => 30,
-        "lat" => 31),
-    OrderedDict{String,MemoryVariable}(
-        "data" => mv),
-    OrderedDict{String,Any}(
-        "history" => "lala"),
-    String[])
-
 
 time_origin = DateTime(2000,1,1)
 @test md["data"][1,1] == time_origin + Dates.Millisecond(data[1,1]*24*60*60*1000)
@@ -132,4 +122,4 @@ time_origin = DateTime(2000,1,1)
 md["data"][1,2] = DateTime(2000,2,1)
 @test md["data"].var[1,2] == Dates.value(md["data"][1,2] - time_origin) ÷ (24*60*60*1000)
 
-#close(ds)
+close(md)

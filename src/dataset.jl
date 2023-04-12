@@ -7,6 +7,8 @@ File path of the data set `ds`.
 path(ds::AbstractDataset) = ""
 
 
+Base.close(ds::AbstractDataset) = nothing
+
 """
     CommonDatamodel.name(ds::AbstractDataset)
 
