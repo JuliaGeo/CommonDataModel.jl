@@ -10,12 +10,13 @@ This package is at a very early state of developpement.
 Here is minimal example for loading GRIB or NetCDF files.
 
 ``` julia
+import CommonDataModel as CDM
 import SomeDatasets # where SomeDatasets is either GRIBDatasets or NCDatasets
 
 ds = SomeDatasets.Dataset("file_name")
 
 # ntime is the number of time instances
-ntime = ds.dim["time"]
+ntime = CDM.dims(ds)["time"]
 
 # create an array-like structure v corresponding to variable temperature
 v = ds["temperature"]
@@ -27,11 +28,14 @@ subdata = v[10:30,30:5:end]
 data = v[:,:]
 
 # load a global attribute
-title = ds.attrib["title"]
+title = CDM.attribs(ds)["title"]
 close(ds)
 ```
 
-Most users would typically import `GRIBDatasets` and `NCDatasets` directly and not `CommonDataModel`. One should import `CommonDataModel` only to extent the functionality of `GRIBDatasets` and `NCDatasets`.
+ Most users would typically import [`GRIBDatasets`](https://github.com/JuliaGeo/GRIBDatasets.jl) and [`NCDatasets`](https://github.com/Alexander-Barth/NCDatasets.jl) directly and not `CommonDataModel`. One should import `CommonDataModel` only to extent the functionality of `GRIBDatasets` and `NCDatasets`.
+
+As a proof-of-concept, there is also an [`TIFFDatasets`](https://github.com/Alexander-Barth/TIFFDatasets.jl) package for GeoTIFF files.
+
 
 
 
