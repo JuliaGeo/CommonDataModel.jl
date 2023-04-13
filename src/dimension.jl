@@ -12,14 +12,18 @@ dimnames(ds::Union{AbstractDataset,AbstractVariable}) = ()
 
 Return the length of the dimension `dimname` in the data set `ds`.
 """
-function dim(v::AbstractVariable,dimname::AbstractString)
-    error("no dimension $dimname in $(name(v))")
-end
+dim(v::AbstractVariable,name::AbstractString) = dim(dataset(v),name)
 
 function dim(ds::AbstractDataset,dimname::AbstractString)
     error("no dimension $dimname in $(path(ds))")
 end
 
+"""
+    CommonDatamodel.defDim(ds::AbstractDataset,name::AbstractString,len)
+
+Create dimension with the name `name` in the data set `ds` with the length `len`.
+`len` can be `Inf` for unlimited dimensions.
+"""
 function defDim(ds::AbstractDataset,name::AbstractString,len)
     error("unimplemnted for abstract type")
 end

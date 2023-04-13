@@ -20,15 +20,13 @@ end
 
 Base.getindex(v::MemoryVariable,ij...) = v.data[ij...]
 Base.setindex!(v::MemoryVariable,data,ij...) = v.data[ij...] = data
-CDM.dataset(v::MemoryVariable) = v.parent_dataset
+Base.size(v::MemoryVariable) = size(v.data)
 CDM.name(v::MemoryVariable) = v.name
 CDM.dimnames(v::MemoryVariable) = v.dimnames
-Base.size(v::MemoryVariable) = size(v.data)
-CDM.dim(v::MemoryVariable,name::AbstractString) = v.parent_dataset.dim[name]
+CDM.dataset(v::MemoryVariable) = v.parent_dataset
 
 Base.keys(md::MemoryDataset) = keys(md.variables)
 CDM.variable(md::MemoryDataset,varname::AbstractString) = md.variables[varname]
-Base.getindex(md::MemoryDataset,varname::AbstractString) = CDM.cfvariable(md,varname)
 CDM.dimnames(md::MemoryDataset) = keys(md.dim)
 CDM.dim(md::MemoryDataset,name::AbstractString) = md.dim[name]
 CDM.attribnames(md::Union{MemoryDataset,MemoryVariable}) = keys(md.attrib)
