@@ -122,4 +122,6 @@ time_origin = DateTime(2000,1,1)
 md["data"][1,2] = DateTime(2000,2,1)
 @test md["data"].var[1,2] == Dates.value(md["data"][1,2] - time_origin) ÷ (24*60*60*1000)
 
+
+@test CDM.dataset(md["data"]) == md
 close(md)

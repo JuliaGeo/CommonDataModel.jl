@@ -31,10 +31,13 @@ function variable(ds::AbstractDataset,variablename::AbstractString)
 end
 
 function defVar(ds::AbstractDataset,name::AbstractString,type,dimnames)
-    error("unimplemnted for abstract type")
+    error("unimplemented for abstract type")
 end
 
 
+function dataset(v::AbstractVariable)
+    error("unimplemented for abstract type")
+end
 
 
 function Base.show(io::IO,v::AbstractVariable)

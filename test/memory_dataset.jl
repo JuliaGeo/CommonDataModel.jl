@@ -20,6 +20,7 @@ end
 
 Base.getindex(v::MemoryVariable,ij...) = v.data[ij...]
 Base.setindex!(v::MemoryVariable,data,ij...) = v.data[ij...] = data
+CDM.dataset(v::MemoryVariable) = v.parent_dataset
 CDM.name(v::MemoryVariable) = v.name
 CDM.dimnames(v::MemoryVariable) = v.dimnames
 Base.size(v::MemoryVariable) = size(v.data)
