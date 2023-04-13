@@ -105,6 +105,10 @@ CDM.defDim(md,"lat",size(data,2))
 mv = CDM.defVar(md,"data",eltype(data),("lon","lat"), attrib = OrderedDict{String,Any}(
     "units" => "days since 2000-01-01"))
 
+CDM.defAttrib(mv,"foo","bar")
+
+@test CDM.attrib(mv,"foo") == "bar"
+
 mv.var[:,:] .= data
 
 @test CDM.dim(md,"lon") == size(data,1)
@@ -124,4 +128,6 @@ md["data"][1,2] = DateTime(2000,2,1)
 
 
 @test CDM.dataset(md["data"]) == md
+
+
 close(md)
