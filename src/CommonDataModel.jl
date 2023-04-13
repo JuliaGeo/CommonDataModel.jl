@@ -59,6 +59,8 @@ abstract type AbstractVariable{T,N} <: AbstractArray{T, N}
 end
 
 
+const SymbolOrString = Union{Symbol, AbstractString}
+
 include("dataset.jl")
 include("variable.jl")
 include("cfvariable.jl")

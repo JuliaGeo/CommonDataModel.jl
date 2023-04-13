@@ -22,15 +22,15 @@ Return an iterable of all the variable name.
 varnames(ds::AbstractDataset) = ()
 
 """
-    CommonDataModel.variable(ds::AbstractDataset,variablename::AbstractString)
+    CommonDataModel.variable(ds::AbstractDataset,variablename::SymbolOrString)
 
 Return the variable with the name `variablename` from the data set `ds`.
 """
-function variable(ds::AbstractDataset,variablename::AbstractString)
+function variable(ds::AbstractDataset,variablename::SymbolOrString)
     error("no variable $variablename in $(path(ds)) (abstract method)")
 end
 
-function defVar(ds::AbstractDataset,name::AbstractString,type,dimnames)
+function defVar(ds::AbstractDataset,name::SymbolOrString,type,dimnames)
     error("unimplemented for abstract type")
 end
 
