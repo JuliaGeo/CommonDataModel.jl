@@ -12,7 +12,12 @@ dimnames(ds::Union{AbstractDataset,AbstractVariable}) = ()
 
 Return the length of the dimension `dimname` in the data set `ds`.
 """
-dim(v::AbstractVariable,name::AbstractString) = dim(dataset(v),name)
+function dim(v::AbstractVariable,name::AbstractString)
+    if !(dimname in dimnames(v))
+        error("$dimname is not among the dimensions of $(name(v))")
+    end
+    return dim(dataset(v),dimname)
+end
 
 function dim(ds::AbstractDataset,dimname::AbstractString)
     error("no dimension $dimname in $(path(ds))")
