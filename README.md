@@ -36,6 +36,17 @@ close(ds)
 
 As a proof-of-concept, there is also an [`TIFFDatasets`](https://github.com/Alexander-Barth/TIFFDatasets.jl) package for GeoTIFF files.
 
+# File conversions
 
+By implementing a common interface, GRIB files can be converted to NetCDF files using
+`NCDatasets.write`:
 
+```julia
+using NCDatasets
+using GRIBDatasets
+using Downloads: download
 
+grib_file = download("https://github.com/JuliaGeo/GRIBDatasets.jl/raw/98356af026ea39a5ec0b5e64e4289105492321f8/test/sample-data/era5-levels-members.grib")
+netcdf_file = "test.nc"
+NCDatasets.write(netcdf_file,GRIBDataset(grib_file))
+```
