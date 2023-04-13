@@ -15,6 +15,11 @@ function attrib(ds::Union{AbstractDataset,AbstractVariable},attribname::Abstract
     error("no attributes $attribname in $(path(ds))")
 end
 
+"""
+    CommonDatamodel.defAttrib(ds::Union{AbstractDataset,AbstractVariable},name::AbstractString,data)
+
+Create an attribute with the name `attrib` in the data set or variable `ds`.
+"""
 function defAttrib(ds::AbstractDataset,name::AbstractString,data)
     error("unimplemnted for abstract type")
 end

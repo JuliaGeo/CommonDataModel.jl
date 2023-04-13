@@ -1,5 +1,5 @@
 """
-    CommonDatamodel.name(v::AbstractVariable)
+    CommonDataModel.name(v::AbstractVariable)
 
 Return the name of the variable `v` as a string.
 """
@@ -7,7 +7,7 @@ name(v::AbstractVariable) = ""
 
 
 """
-    CommonDatamodel.dimnames(v::AbstractVariable)
+    CommonDataModel.dimnames(v::AbstractVariable)
 
 Return an iterable of the dimension names of the variable `v`.
 """
@@ -15,14 +15,14 @@ dimnames(av::AbstractVariable) = ()
 
 
 """
-    CommonDatamodel.varnames(ds::AbstractDataset)
+    CommonDataModel.varnames(ds::AbstractDataset)
 
 Return an iterable of all the variable name.
 """
 varnames(ds::AbstractDataset) = ()
 
 """
-    CommonDatamodel.variable(ds::AbstractDataset,variablename::AbstractString)
+    CommonDataModel.variable(ds::AbstractDataset,variablename::AbstractString)
 
 Return the variable with the name `variablename` from the data set `ds`.
 """
@@ -31,10 +31,17 @@ function variable(ds::AbstractDataset,variablename::AbstractString)
 end
 
 function defVar(ds::AbstractDataset,name::AbstractString,type,dimnames)
-    error("unimplemnted for abstract type")
+    error("unimplemented for abstract type")
 end
 
+"""
+    ds = CommonDataModel.dataset(v::AbstractVariable)
 
+Return the data set `ds` to which a the variable `v` belongs to.
+"""
+function dataset(v::AbstractVariable)
+    error("unimplemented for abstract type")
+end
 
 
 function Base.show(io::IO,v::AbstractVariable)

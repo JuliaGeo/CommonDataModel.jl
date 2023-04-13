@@ -2,6 +2,7 @@ import NCDatasets
 import GRIBDatasets
 import CommonDataModel as CDM
 using Test
+using DataStructures
 
 datadir = joinpath(dirname(pathof(GRIBDatasets)),"..","test","sample-data")
 filename = joinpath(datadir,"era5-levels-members.grib")
@@ -28,9 +29,9 @@ NCDatasets.write(tmp_filename,ds)
 dsnc = NCDatasets.Dataset(tmp_filename)
 @test ds["number"][:] == dsnc["number"][:]
 
-@test CDM.dims(ds) == CDM.dims(dsnc)
-@test CDM.attribs(ds) == CDM.attribs(dsnc)
-@test CDM.groups(ds) == CDM.groups(dsnc)
+@test OrderedDict(CDM.dims(ds)) == OrderedDict(CDM.dims(dsnc))
+@test OrderedDict(CDM.attribs(ds)) == OrderedDict(CDM.attribs(dsnc))
+@test OrderedDict(CDM.groups(ds)) == OrderedDict(CDM.groups(dsnc))
 
 
 close(dsnc)

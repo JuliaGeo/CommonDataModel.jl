@@ -35,6 +35,12 @@ function group(ds::AbstractDataset,groupname::AbstractString)
     error("no group $groupname in $(path(ds))")
 end
 
+"""
+    group = CommonDatamodel.defGroup(ds::AbstractDataset,name::AbstractString)
+
+Create an empty sub-group with the name `name` in the data set `ds`.
+The `group` is a sub-type of `AbstractDataset`.
+"""
 function defGroup(ds::AbstractDataset,name::AbstractString)
     error("unimplemented for abstract type")
 end
@@ -108,6 +114,9 @@ function Base.show(io::IO,ds::AbstractDataset)
     end
 
 end
+
+
+Base.getindex(ds::AbstractDataset,varname) = cfvariable(ds,varname)
 
 
 for (item_color,default) in (

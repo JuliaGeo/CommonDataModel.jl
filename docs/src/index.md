@@ -1,7 +1,13 @@
 
 ## Abstract types
 
-Overview of methods
+In order to implement a new dataset based `CommonDataModel.jl`
+one has to create two types derived from:
+1 .`AbstractVariable`: a variable with named dimension and metadata
+2. `AbstractDataset`: a collection of variable with named dimension, metadata and sub-groups. The sub-groups are also `AbstractDataset`.
+
+
+Overview of methods:
 
 |            | get names     | get value  | write / set value |
 |------------|---------------|------------|-------------------|

@@ -22,6 +22,8 @@ Return a tuple of integers with the size of the variable `var`.
 Base.size(v::CFVariable) = size(v.var)
 
 name(v::CFVariable) = name(v.var)
+dataset(v::CFVariable) = dataset(v.var)
+
 
 attribnames(v::CFVariable) = keys(v.attrib)
 attrib(v::CFVariable,name::AbstractString) = v.attrib[name]
