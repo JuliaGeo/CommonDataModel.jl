@@ -2,6 +2,7 @@ import NCDatasets
 import GRIBDatasets
 import CommonDataModel as CDM
 using Test
+using OrderedDict
 
 datadir = joinpath(dirname(pathof(GRIBDatasets)),"..","test","sample-data")
 filename = joinpath(datadir,"era5-levels-members.grib")
