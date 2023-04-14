@@ -27,6 +27,7 @@ dataset(v::CFVariable) = dataset(v.var)
 
 attribnames(v::CFVariable) = keys(v.attrib)
 attrib(v::CFVariable,name::SymbolOrString) = v.attrib[name]
+defAttrib(v::CFVariable,name,value) = defAttrib(v.var,name,value)
 
 dimnames(v::CFVariable) = dimnames(v.var)
 dim(v::CFVariable,name::SymbolOrString) = dim(v.var,name)
@@ -40,12 +41,12 @@ Base.display(v::AbstractVariable) = show(stdout,v)
 """
     v = cfvariable(ds::NCDataset,varname::SymbolOrString; <attrib> = <value>)
 
-Return the NetCDF variable `varname` in the dataset `ds` as a
+Return the variable `varname` in the dataset `ds` as a
 `NCDataset.CFVariable`. The keyword argument `<attrib>` are
-the NetCDF attributes (`fillvalue`, `missing_value`, `scale_factor`, `add_offset`,
+the attributes (`fillvalue`, `missing_value`, `scale_factor`, `add_offset`,
 `units` and `calendar`) relevant to the CF conventions.
 By specifing the value of these attributes, the one can override the value
-specified in the NetCDF file. If the attribute is set to `nothing`, then
+specified in the data set. If the attribute is set to `nothing`, then
 the attribute is not loaded and the corresponding transformation is ignored.
 This function is similar to `ds[varname]` with the additional flexibility that
 some variable attributes can be overridden.
@@ -409,7 +410,7 @@ function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{I
         return data
     end
 
-    throw(NetCDFError(-1, "Time units and calendar must be defined during defVar and cannot change"))
+    @error "Time units and calendar must be defined during defVar and cannot change"
 end
 
 
@@ -440,7 +441,7 @@ end
 """
     _getattrib(ds,v,parentname,attribname,default)
 
-Get a NetCDF attribute, looking also at the parent variable name
+Get an attribute, looking also at the parent variable name
 (linked via the bounds attribute as following the CF conventions).
 The default value is returned if the attribute cannot be found.
 """
