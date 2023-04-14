@@ -20,6 +20,7 @@ Return a tuple of integers with the size of the variable `var`.
     unlimited dimension.
 """
 Base.size(v::CFVariable) = size(v.var)
+Base.parent(v::CFVariable) = parent(v.var)
 
 name(v::CFVariable) = name(v.var)
 dataset(v::CFVariable) = dataset(v.var)

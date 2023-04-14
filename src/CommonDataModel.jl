@@ -6,7 +6,8 @@ using Printf
 using Preferences
 import Base: isopen, show, display, close
 using DataStructures
-
+import DiskArrays: AbstractDiskArray, readblock!, haschunks, eachchunk
+using DiskArrays: GridChunks, Unchunked
 """
 
 `AbstractDataset` is a collection of multidimensional variables (for example a
@@ -55,7 +56,7 @@ For a writable-dataset, one should also implement:
 * `Base.setindex(v,data,indices...)`: set the data in `v` at the provided indices
 
 """
-abstract type AbstractVariable{T,N} <: AbstractArray{T, N}
+abstract type AbstractVariable{T,N} <: AbstractDiskArray{T, N}
 end
 
 
