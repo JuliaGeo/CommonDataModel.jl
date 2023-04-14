@@ -20,7 +20,6 @@ Return a tuple of integers with the size of the variable `var`.
     unlimited dimension.
 """
 Base.size(v::CFVariable) = size(v.var)
-Base.parent(v::CFVariable) = parent(v.var)
 
 name(v::CFVariable) = name(v.var)
 dataset(v::CFVariable) = dataset(v.var)
@@ -385,22 +384,22 @@ end
 @inline CFinvtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DT) = CFtransform_replace_missing(data,fv)
 
 
-function Base.getindex(v::CFVariable,
+function readblock!(v::CFVariable, aout,
                        indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
-    data = v.var[indexes...]
-    return CFtransformdata(data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
+    data = readblock!(v.var, aout, indexes...)
+    aout[indexes...] = CFtransformdata(data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
                            time_origin(v),time_factor(v),eltype(v))
 end
 
-function Base.setindex!(v::CFVariable,data::Array{Missing,N},indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where N
+function writeblock!(v::CFVariable,data::Array{Missing,N},indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where N
     v.var[indexes...] = fill(fillvalue(v),size(data))
 end
 
-function Base.setindex!(v::CFVariable,data::Missing,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
+function writeblock!(v::CFVariable,data::Missing,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
     v.var[indexes...] = fillvalue(v)
 end
 
-function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where N where T <: Union{AbstractCFDateTime,DateTime,Union{Missing,DateTime,AbstractCFDateTime}}
+function writeblock!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where N where T <: Union{AbstractCFDateTime,DateTime,Union{Missing,DateTime,AbstractCFDateTime}}
 
     if calendar(v) !== nothing
         # can throw an convertion error if calendar attribute already exists and
@@ -415,7 +414,7 @@ function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{I
 end
 
 
-function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
+function writeblock!(v::CFVariable,data,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
     v.var[indexes...] = CFinvtransformdata(
         data,fill_and_missing_values(v),
         scale_factor(v),add_offset(v),

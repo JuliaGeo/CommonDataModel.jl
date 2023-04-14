@@ -47,14 +47,6 @@ function Base.parent(var::AbstractVariable)
     error("unimplemented for abstract type")
 end
 
-function readblock!(A::AbstractVariable, aout, i::AbstractUnitRange...)
-    readblock!(parent(A), aout, i...)
-end
-
-function writeblock!(A::AbstractVariable, v, i::AbstractUnitRange...)
-    writeblock!(parent(A), v, i...)
-end
-
 eachchunk(A::AbstractVariable) = GridChunks(A, size(A))
 haschunks(A::AbstractVariable) = Unchunked()
 
