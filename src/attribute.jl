@@ -7,20 +7,20 @@ attribnames(ds::Union{AbstractDataset,AbstractVariable}) = ()
 
 
 """
-    CommonDatamodel.attrib(ds::Union{AbstractDataset,AbstractVariable},attribname::AbstractString)
+    CommonDatamodel.attrib(ds::Union{AbstractDataset,AbstractVariable},attribname::SymbolOrString)
 
 Return the length of the attributes `attribname` in the data set `ds`.
 """
-function attrib(ds::Union{AbstractDataset,AbstractVariable},attribname::AbstractString)
+function attrib(ds::Union{AbstractDataset,AbstractVariable},attribname::SymbolOrString)
     error("no attributes $attribname in $(path(ds))")
 end
 
 """
-    CommonDatamodel.defAttrib(ds::Union{AbstractDataset,AbstractVariable},name::AbstractString,data)
+    CommonDatamodel.defAttrib(ds::Union{AbstractDataset,AbstractVariable},name::SymbolOrString,data)
 
 Create an attribute with the name `attrib` in the data set or variable `ds`.
 """
-function defAttrib(ds::AbstractDataset,name::AbstractString,data)
+function defAttrib(ds::AbstractDataset,name::SymbolOrString,data)
     error("unimplemnted for abstract type")
 end
 

@@ -26,11 +26,11 @@ dataset(v::CFVariable) = dataset(v.var)
 
 
 attribnames(v::CFVariable) = keys(v.attrib)
-attrib(v::CFVariable,name::AbstractString) = v.attrib[name]
+attrib(v::CFVariable,name::SymbolOrString) = v.attrib[name]
 defAttrib(v::CFVariable,name,value) = defAttrib(v.var,name,value)
 
 dimnames(v::CFVariable) = dimnames(v.var)
-dim(v::CFVariable,name::AbstractString) = dim(v.var,name)
+dim(v::CFVariable,name::SymbolOrString) = dim(v.var,name)
 
 # necessary for IJulia if showing a variable from a closed file
 Base.show(io::IO,::MIME"text/plain",v::AbstractVariable) = show(io,v)
@@ -39,7 +39,7 @@ Base.display(v::AbstractVariable) = show(stdout,v)
 
 
 """
-    v = cfvariable(ds::NCDataset,varname::AbstractString; <attrib> = <value>)
+    v = cfvariable(ds::NCDataset,varname::SymbolOrString; <attrib> = <value>)
 
 Return the variable `varname` in the dataset `ds` as a
 `NCDataset.CFVariable`. The keyword argument `<attrib>` are

@@ -27,21 +27,21 @@ groupnames(ds::AbstractDataset) = ()
 
 
 """
-    CommonDatamodel.group(ds::AbstractDataset,groupname::AbstractString)
+    CommonDatamodel.group(ds::AbstractDataset,groupname::SymbolOrString)
 
 Return the sub-group data set with the name `groupname`.
 """
-function group(ds::AbstractDataset,groupname::AbstractString)
+function group(ds::AbstractDataset,groupname::SymbolOrString)
     error("no group $groupname in $(path(ds))")
 end
 
 """
-    group = CommonDatamodel.defGroup(ds::AbstractDataset,name::AbstractString)
+    group = CommonDatamodel.defGroup(ds::AbstractDataset,name::SymbolOrString)
 
 Create an empty sub-group with the name `name` in the data set `ds`.
 The `group` is a sub-type of `AbstractDataset`.
 """
-function defGroup(ds::AbstractDataset,name::AbstractString)
+function defGroup(ds::AbstractDataset,name::SymbolOrString)
     error("unimplemented for abstract type")
 end
 
