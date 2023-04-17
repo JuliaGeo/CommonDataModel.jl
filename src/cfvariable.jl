@@ -386,17 +386,21 @@ end
 
 function readblock!(v::CFVariable, aout,
                        indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
-    data = readblock!(v.var, aout, indexes...)
-    aout .= CFtransformdata(data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
+    readblock!(v.var, aout, indexes...)
+    aout .= CFtransformdata(aout,fill_and_missing_values(v),scale_factor(v),add_offset(v),
                            time_origin(v),time_factor(v),eltype(v))
 end
 
 function writeblock!(v::CFVariable,data::Array{Missing,N},indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where N
-    v.var[indexes...] = fill(fillvalue(v),size(data))
+    transformed = fill(fillvalue(v), size(data))
+    writeblock!(v.var, transformed, indexes...)
+    return transformed
 end
 
 function writeblock!(v::CFVariable,data::Missing,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
-    v.var[indexes...] = fillvalue(v)
+    transformed = fillvalue(v)
+    writeblock!(v.var, transformed, indexes...)
+    return transformed
 end
 
 function writeblock!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where N where T <: Union{AbstractCFDateTime,DateTime,Union{Missing,DateTime,AbstractCFDateTime}}
@@ -404,10 +408,11 @@ function writeblock!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{Int,
     if calendar(v) !== nothing
         # can throw an convertion error if calendar attribute already exists and
         # is incompatible with the provided data
-        v.var[indexes...] = CFinvtransformdata(
+        transformed = CFinvtransformdata(
             data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
             time_origin(v),time_factor(v),eltype(v.var))
-        return data
+        writeblock!(v.var, transformed, indexes...)
+        return transformed
     end
 
     @error "Time units and calendar must be defined during defVar and cannot change"
@@ -415,12 +420,13 @@ end
 
 
 function writeblock!(v::CFVariable,data,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
-    v.var[indexes...] = CFinvtransformdata(
+    transformed = CFinvtransformdata(
         data,fill_and_missing_values(v),
         scale_factor(v),add_offset(v),
         time_origin(v),time_factor(v),eltype(v.var))
+    writeblock!(v.var, transformed, indexes...)
 
-    return data
+    return transformed
 end
 
 
