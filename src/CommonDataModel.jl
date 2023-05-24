@@ -8,6 +8,8 @@ import Base: isopen, show, display, close
 using DataStructures
 import DiskArrays: AbstractDiskArray, readblock!, writeblock!, haschunks, eachchunk
 using DiskArrays: GridChunks, Unchunked
+using DiskArrays: @implement_diskarray
+
 """
 
 `AbstractDataset` is a collection of multidimensional variables (for example a
@@ -56,7 +58,7 @@ For a writable-dataset, one should also implement:
 * `Base.setindex(v,data,indices...)`: set the data in `v` at the provided indices
 
 """
-abstract type AbstractVariable{T,N} <: AbstractDiskArray{T, N}
+abstract type AbstractVariable{T,N} <: AbstractArray{T, N}
 end
 
 

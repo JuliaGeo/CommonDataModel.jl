@@ -9,6 +9,8 @@ mutable struct CFVariable{T,N,TV,TA,TSA}  <: AbstractVariable{T, N}
     _storage_attrib::TSA
 end
 
+@implement_diskarray CFVariable
+
 """
     sz = size(var::CFVariable)
 
@@ -386,8 +388,8 @@ end
 
 function readblock!(v::CFVariable, aout,
                        indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
-    readblock!(v.var, aout, indexes...)
-    aout .= CFtransformdata(aout,fill_and_missing_values(v),scale_factor(v),add_offset(v),
+    rawdata = getindex(v.var, indexes...)
+    aout .= CFtransformdata(rawdata,fill_and_missing_values(v),scale_factor(v),add_offset(v),
                            time_origin(v),time_factor(v),eltype(v))
 end
 
