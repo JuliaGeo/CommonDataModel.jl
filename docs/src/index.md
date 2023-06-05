@@ -13,7 +13,7 @@ one has to create two types derived from:
 
 Overview of methods:
 
-|            | get names                                     | get value                               e| write / set value                        |
+|            | get names                                     | get values                              | write / set value                        |
 |------------|-----------------------------------------------|-----------------------------------------|-------------------------------------------|
 | Dimensions | [`dimnames`](#CommonDataModel.dimnames)       | [`dim`](#CommonDataModel.dim)           | [`defDim`](#CommonDataModel.defDim)       |
 | Attributes | [`attribnames`](#CommonDataModel.attribnames) | [`attrib`](#CommonDataModel.attrib)     | [`defAttrib`](#CommonDataModel.defAttrib) |
