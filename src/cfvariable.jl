@@ -395,13 +395,13 @@ end
 
 function writeblock!(v::CFVariable,data::Array{Missing,N},indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where N
     transformed = fill(fillvalue(v), size(data))
-    writeblock!(v.var, transformed, indexes...)
+    setindex!(v.var, transformed, indexes...)
     return transformed
 end
 
 function writeblock!(v::CFVariable,data::Missing,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
     transformed = fillvalue(v)
-    writeblock!(v.var, transformed, indexes...)
+    setindex!(v.var, transformed, indexes...)
     return transformed
 end
 
@@ -413,7 +413,7 @@ function writeblock!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{Int,
         transformed = CFinvtransformdata(
             data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
             time_origin(v),time_factor(v),eltype(v.var))
-        writeblock!(v.var, transformed, indexes...)
+        setindex!(v.var, transformed, indexes...)
         return transformed
     end
 
@@ -426,7 +426,7 @@ function writeblock!(v::CFVariable,data,indexes::Union{Int,Colon,AbstractRange{<
         data,fill_and_missing_values(v),
         scale_factor(v),add_offset(v),
         time_origin(v),time_factor(v),eltype(v.var))
-    writeblock!(v.var, transformed, indexes...)
+    setindex!(v.var, transformed, indexes...)
 
     return transformed
 end
