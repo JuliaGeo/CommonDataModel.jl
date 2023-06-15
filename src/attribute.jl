@@ -9,7 +9,7 @@ attribnames(ds::Union{AbstractDataset,AbstractVariable}) = ()
 """
     CommonDatamodel.attrib(ds::Union{AbstractDataset,AbstractVariable},attribname::SymbolOrString)
 
-Return the length of the attributes `attribname` in the data set `ds`.
+Return the value of the attribute `attribname` in the data set `ds`.
 """
 function attrib(ds::Union{AbstractDataset,AbstractVariable},attribname::SymbolOrString)
     error("no attributes $attribname in $(path(ds))")
