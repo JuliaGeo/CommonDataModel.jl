@@ -35,4 +35,17 @@ dsnc = NCDatasets.Dataset(tmp_filename)
 
 
 close(dsnc)
-# close(ds)
+
+
+# copy individual variables
+tmp_filename = tempname()
+dsnc = NCDatasets.Dataset(tmp_filename,"c")
+gribv = ds["lon"]
+ncv = CDM.defVar(dsnc,gribv)
+@test CDM.name(ncv) == CDM.name(gribv)
+@test ncv[:] == gribv[:]
+@test CDM.attrib(ncv,"units") == CDM.attrib(gribv,"units")
+@test collect(CDM.dimnames(ncv)) == collect(CDM.dimnames(gribv))
+close(dsnc)
+
+close(ds)
