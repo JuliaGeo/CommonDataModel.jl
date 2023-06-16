@@ -43,7 +43,7 @@ function defVar(ds::AbstractDataset,
                 name::SymbolOrString,
                 data::AbstractArray{Union{Missing,T},N},
                 dimnames;
-                kwargs...) where T <: Union{Int8,UInt8,Int16,Int32,Int64,Float32,Float64} where N
+                kwargs...) where T <: Union{Int8,UInt8,Int16,Int32,Int64,Float32,Float64,Char,String} where N
     _defVar(ds::AbstractDataset,name,data,T,dimnames; kwargs...)
 end
 
@@ -55,7 +55,7 @@ function defVar(ds::AbstractDataset,
                 data::AbstractArray{<:Union{Missing,T},N},
                 dimnames;
                 kwargs...) where T <: Union{DateTime,AbstractCFDateTime} where N
-    _defVar(ds::AbstractDataset,name,data,Float64,dimnames; kwargs...)
+    _defVar(ds,name,data,Float64,dimnames; kwargs...)
 end
 
 function defVar(ds::AbstractDataset,name::SymbolOrString,data,dimnames; kwargs...)
@@ -65,7 +65,8 @@ function defVar(ds::AbstractDataset,name::SymbolOrString,data,dimnames; kwargs..
     else
         nctype = eltype(data)
     end
-    _defVar(ds::AbstractDataset,name,data,nctype,dimnames; kwargs...)
+
+    _defVar(ds,name,data,nctype,dimnames; kwargs...)
 end
 
 function _defVar(ds::AbstractDataset,name::SymbolOrString,data,nctype,vardimnames; attrib = [], kwargs...)
@@ -73,7 +74,7 @@ function _defVar(ds::AbstractDataset,name::SymbolOrString,data,nctype,vardimname
     for (i,dimname) in enumerate(vardimnames)
         if !(dimname in dimnames(ds))
             defDim(ds,dimname,size(data,i))
-        elseif !(dimname in unlimited(ds.dim))
+        elseif !(dimname in unlimited(ds))
             dimlen = dim(ds,dimname)
 
             if (dimlen != size(data,i))
@@ -84,14 +85,15 @@ function _defVar(ds::AbstractDataset,name::SymbolOrString,data,nctype,vardimname
     end
 
     T = eltype(data)
-    attrib = collect(attrib)
+    # we should preserve the order
+    # value type is promoted to Any as we add values of different type
+    attrib = convert(OrderedDict{String,Any},OrderedDict(attrib))
 
     if T <: Union{TimeType,Missing}
-        dattrib = Dict(attrib)
-        if !haskey(dattrib,"units")
+        if !haskey(attrib,"units")
             push!(attrib,"units" => CFTime.DEFAULT_TIME_UNITS)
         end
-        if !haskey(dattrib,"calendar")
+        if !haskey(attrib,"calendar")
             # these dates cannot be converted to the standard calendar
             if T <: Union{DateTime360Day,Missing}
                 push!(attrib,"calendar" => "360_day")
@@ -103,18 +105,14 @@ function _defVar(ds::AbstractDataset,name::SymbolOrString,data,nctype,vardimname
         end
     end
 
-    v =
-        if Missing <: T
-            # make sure a fill value is set (it might be overwritten by kwargs...)
-            defVar(ds,name,nctype,vardimnames;
-                   fillvalue = fillvalue(nctype),
+    # make sure a fill value is set
+    if (Missing <: T) && !haskey(attrib,"_FillValue")
+        push!(attrib,"_FillValue" => fillvalue(nctype))
+    end
+
+    v = defVar(ds,name,nctype,vardimnames;
                    attrib = attrib,
                    kwargs...)
-        else
-            defVar(ds,name,nctype,vardimnames;
-                   attrib = attrib,
-                   kwargs...)
-        end
 
     v[:] = data
     return v
