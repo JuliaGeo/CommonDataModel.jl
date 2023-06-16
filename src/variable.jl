@@ -106,7 +106,8 @@ function _defVar(ds::AbstractDataset,name::SymbolOrString,data,nctype,vardimname
     end
 
     # make sure a fill value is set
-    if (Missing <: T) && !haskey(attrib,"_FillValue")
+    if (Missing <: T) && !haskey(attrib,"_FillValue") &&
+        !haskey(kwargs,:fillvalue)
         push!(attrib,"_FillValue" => fillvalue(nctype))
     end
 
