@@ -30,8 +30,115 @@ function variable(ds::AbstractDataset,variablename::SymbolOrString)
     error("no variable $variablename in $(path(ds)) (abstract method)")
 end
 
-function defVar(ds::AbstractDataset,name::SymbolOrString,type,dimnames)
+function defVar(ds::AbstractDataset,name::SymbolOrString,type::DataType,
+                dimnames)
     error("unimplemented for abstract type")
+end
+
+
+
+
+# data has the type e.g. Array{Union{Missing,Float64},3}
+function defVar(ds::AbstractDataset,
+                name::SymbolOrString,
+                data::AbstractArray{Union{Missing,T},N},
+                dimnames;
+                kwargs...) where T <: Union{Int8,UInt8,Int16,Int32,Int64,Float32,Float64,Char,String} where N
+    _defVar(ds::AbstractDataset,name,data,T,dimnames; kwargs...)
+end
+
+# data has the type e.g. Vector{DateTime}, Array{Union{Missing,DateTime},3} or
+# Vector{DateTime360Day}
+# Data is always stored as Float64 in the NetCDF file
+function defVar(ds::AbstractDataset,
+                name::SymbolOrString,
+                data::AbstractArray{<:Union{Missing,T},N},
+                dimnames;
+                kwargs...) where T <: Union{DateTime,AbstractCFDateTime} where N
+    _defVar(ds,name,data,Float64,dimnames; kwargs...)
+end
+
+function defVar(ds::AbstractDataset,name::SymbolOrString,data,dimnames; kwargs...)
+    # eltype of a String would be Char
+    if data isa String
+        nctype = String
+    else
+        nctype = eltype(data)
+    end
+
+    _defVar(ds,name,data,nctype,dimnames; kwargs...)
+end
+
+function _defVar(ds::AbstractDataset,name::SymbolOrString,data,nctype,vardimnames; attrib = [], kwargs...)
+    # define the dimensions if necessary
+    for (i,dimname) in enumerate(vardimnames)
+        if !(dimname in dimnames(ds))
+            defDim(ds,dimname,size(data,i))
+        elseif !(dimname in unlimited(ds))
+            dimlen = dim(ds,dimname)
+
+            if (dimlen != size(data,i))
+                error("dimension $(dimname) is already defined with the " *
+                    "length $dimlen. It cannot be redefined with a length of $(size(data,i)).")
+            end
+        end
+    end
+
+    T = eltype(data)
+    # we should preserve the order
+    # value type is promoted to Any as we add values of different type
+    attrib = convert(OrderedDict{String,Any},OrderedDict(attrib))
+
+    if T <: Union{TimeType,Missing}
+        if !haskey(attrib,"units")
+            push!(attrib,"units" => CFTime.DEFAULT_TIME_UNITS)
+        end
+        if !haskey(attrib,"calendar")
+            # these dates cannot be converted to the standard calendar
+            if T <: Union{DateTime360Day,Missing}
+                push!(attrib,"calendar" => "360_day")
+            elseif T <: Union{DateTimeNoLeap,Missing}
+                push!(attrib,"calendar" => "365_day")
+            elseif T <: Union{DateTimeAllLeap,Missing}
+                push!(attrib,"calendar" => "366_day")
+            end
+        end
+    end
+
+    # make sure a fill value is set
+    if (Missing <: T) && !haskey(attrib,"_FillValue") &&
+        !haskey(kwargs,:fillvalue)
+        push!(attrib,"_FillValue" => fillvalue(nctype))
+    end
+
+    v = defVar(ds,name,nctype,vardimnames;
+                   attrib = attrib,
+                   kwargs...)
+
+    v[:] = data
+    return v
+end
+
+
+function defVar(ds::AbstractDataset,name,data::T; kwargs...) where T <: Union{Number,String,Char}
+    v = defVar(ds,name,T,(); kwargs...)
+    v[:] = data
+    return v
+end
+
+"""
+    v = CommonDataModel.defVar(ds::AbstractDataset,src::AbstractVariable)
+
+Defines and return the variable in the data set `ds`
+copied from the variable `src`. The variable name, dimension name, attributes
+and data are copied from `src`.
+"""
+function defVar(ds::AbstractDataset,src::AbstractVariable)
+    v = defVar(ds,name(src),
+               Array(src),
+               dimnames(src),
+               attrib=attribs(src))
+    return v
 end
 
 """

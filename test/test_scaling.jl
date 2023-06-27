@@ -47,7 +47,7 @@ for sample_data = ( -100:100,
     local io, data, fill_value, mv, md, add_offset, scale_factor
 
     fill_value = sample_data[1]
-    data = rand(sample_data[2:end],30,31)
+    data = rand(sample_data[2:end],3,4)
 
     md = MemoryDataset()
     CDM.defDim(md,"lon",size(data,1))
@@ -56,7 +56,7 @@ for sample_data = ( -100:100,
     scale_factor = 10
 
     mv = CDM.defVar(md,"data",eltype(data),("lon","lat"), attrib =
-        OrderedDict{String,Any}(
+        OrderedDict(
             "_FillValue" => fill_value,
             "add_offset" => add_offset,
             "scale_factor" => scale_factor,
@@ -89,13 +89,23 @@ for sample_data = ( -100:100,
         mv[3,3] = 'y'
         @test mv.var[3,3] == 'y'
     end
+
+    # defVar(ds,name,data,dimnames)
+
+    data2 = replace(data,fill_value => missing)
+    mv = CDM.defVar(md,"data2",data2,("lon","lat"), attrib =
+        OrderedDict(
+            "_FillValue" => fill_value
+        ))
+
+    @test all(mv[:,:] .=== data2)
 end
 
 
 # time
 
 sample_data =  -100:100
-data = rand(sample_data,30,31)
+data = rand(sample_data,3,4)
 
 md = MemoryDataset()
 CDM.defDim(md,"lon",size(data,1))
@@ -128,6 +138,4 @@ md["data"][1,2] = DateTime(2000,2,1)
 
 
 @test CDM.dataset(md["data"]) == md
-
-
 close(md)

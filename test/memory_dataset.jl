@@ -1,7 +1,8 @@
 import Base
 import CommonDataModel as CDM
+#import CommonDataModel: SymbolOrString
 using DataStructures
-
+import CommonDataModel: defVar, unlimited, name, dimnames, dataset, variable, dim, attribnames, attrib, defDim, defAttrib
 
 struct MemoryVariable{T,N,TP} <: CDM.AbstractVariable{T,N}
     parent_dataset::TP
@@ -42,12 +43,13 @@ function CDM.defDim(md::MemoryDataset,name::AbstractString,len)
     end
 end
 
-function CDM.defVar(md::MemoryDataset,name::AbstractString,T,dimnames;
+function CDM.defVar(md::MemoryDataset,name::AbstractString,T::DataType,dimnames;
                     attrib = OrderedDict{String,Any}(),
                     )
     sz = ntuple(i -> CDM.dim(md,dimnames[i]),length(dimnames))
     data = Array{T,length(dimnames)}(undef,sz...)
-    mv = MemoryVariable(md,name,(dimnames...,), data, attrib)
+    mv = MemoryVariable(md,name,(dimnames...,), data,
+                        convert(OrderedDict{String,Any},attrib))
     md.variables[name] = mv
 
     return md[name] # return CFVariable
