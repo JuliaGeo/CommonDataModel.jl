@@ -216,8 +216,9 @@ scale_factor(v::CFVariable) = v._storage_attrib.scale_factor
 add_offset(v::CFVariable) = v._storage_attrib.add_offset
 time_origin(v::CFVariable) = v._storage_attrib.time_origin
 calendar(v::CFVariable) = v._storage_attrib.calendar
-""""
-    tf = time_factor(v::CFVariable)
+
+"""
+    tf = CommonDataModel.time_factor(v::CFVariable)
 
 The time unit in milliseconds. E.g. seconds would be 1000., days would be 86400000.
 The result can also be `nothing` if the variable has no time units.
