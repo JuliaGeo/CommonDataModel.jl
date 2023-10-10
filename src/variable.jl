@@ -115,7 +115,13 @@ function _defVar(ds::AbstractDataset,name::SymbolOrString,data,nctype,vardimname
                    attrib = attrib,
                    kwargs...)
 
-    v[:] = data
+    # "v[:] = data" does not work with DiskArrays and unlimited dimensions
+    if data isa String
+        # axes of a scalar String fails (while ok for Number and Char)
+        v[] = data
+    else
+        v[axes(data)...] = data
+    end
     return v
 end
 
