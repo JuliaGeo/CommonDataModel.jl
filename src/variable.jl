@@ -133,11 +133,12 @@ Defines and return the variable in the data set `ds`
 copied from the variable `src`. The variable name, dimension name, attributes
 and data are copied from `src`.
 """
-function defVar(ds::AbstractDataset,src::AbstractVariable)
-    v = defVar(ds,name(src),
-               Array(src),
-               dimnames(src),
-               attrib=attribs(src))
+function defVar(dest::AbstractDataset,srcvar::AbstractVariable; kwargs...)
+    v = defVar(dest,name(srcvar),
+               Array(srcvar),
+               dimnames(srcvar),
+               attrib=attribs(srcvar); kwargs...)
+
     return v
 end
 
