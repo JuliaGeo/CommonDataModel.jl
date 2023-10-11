@@ -6,6 +6,9 @@ using Printf
 using Preferences
 import Base: isopen, show, display, close
 using DataStructures
+import DiskArrays: AbstractDiskArray, readblock!, writeblock!, haschunks, eachchunk
+using DiskArrays: GridChunks, Unchunked
+using DiskArrays: @implement_diskarray
 
 """
 

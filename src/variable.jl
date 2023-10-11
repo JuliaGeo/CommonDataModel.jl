@@ -157,6 +157,12 @@ function dataset(v::AbstractVariable)
     error("unimplemented for abstract type")
 end
 
+function Base.parent(var::AbstractVariable)
+    error("unimplemented for abstract type")
+end
+
+eachchunk(A::AbstractVariable) = GridChunks(A, size(A))
+haschunks(A::AbstractVariable) = Unchunked()
 
 function Base.show(io::IO,v::AbstractVariable)
     level = get(io, :level, 0)

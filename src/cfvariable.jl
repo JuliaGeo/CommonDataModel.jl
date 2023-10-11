@@ -9,6 +9,8 @@ mutable struct CFVariable{T,N,TV,TA,TSA}  <: AbstractVariable{T, N}
     _storage_attrib::TSA
 end
 
+@implement_diskarray CFVariable
+
 """
     sz = size(var::CFVariable)
 
@@ -385,43 +387,49 @@ end
 @inline CFinvtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DT) = CFtransform_replace_missing(data,fv)
 
 
-function Base.getindex(v::CFVariable,
+function readblock!(v::CFVariable, aout,
                        indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
-    data = v.var[indexes...]
-    return CFtransformdata(data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
+    rawdata = getindex(v.var, indexes...)
+    aout .= CFtransformdata(rawdata,fill_and_missing_values(v),scale_factor(v),add_offset(v),
                            time_origin(v),time_factor(v),eltype(v))
 end
 
-function Base.setindex!(v::CFVariable,data::Array{Missing,N},indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where N
-    v.var[indexes...] = fill(fillvalue(v),size(data))
+function writeblock!(v::CFVariable,data::Array{Missing,N},indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where N
+    transformed = fill(fillvalue(v), size(data))
+    setindex!(v.var, transformed, indexes...)
+    return transformed
 end
 
-function Base.setindex!(v::CFVariable,data::Missing,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
-    v.var[indexes...] = fillvalue(v)
+function writeblock!(v::CFVariable,data::Missing,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
+    transformed = fillvalue(v)
+    setindex!(v.var, transformed, indexes...)
+    return transformed
 end
 
-function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where N where T <: Union{AbstractCFDateTime,DateTime,Union{Missing,DateTime,AbstractCFDateTime}}
+function writeblock!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where N where T <: Union{AbstractCFDateTime,DateTime,Union{Missing,DateTime,AbstractCFDateTime}}
 
     if calendar(v) !== nothing
         # can throw an convertion error if calendar attribute already exists and
         # is incompatible with the provided data
-        v.var[indexes...] = CFinvtransformdata(
+        transformed = CFinvtransformdata(
             data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
             time_origin(v),time_factor(v),eltype(v.var))
-        return data
+        setindex!(v.var, transformed, indexes...)
+        return transformed
     end
 
     @error "Time units and calendar must be defined during defVar and cannot change"
 end
 
 
-function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
-    v.var[indexes...] = CFinvtransformdata(
+function writeblock!(v::CFVariable,data,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
+    transformed = CFinvtransformdata(
         data,fill_and_missing_values(v),
         scale_factor(v),add_offset(v),
         time_origin(v),time_factor(v),eltype(v.var))
+    setindex!(v.var, transformed, indexes...)
 
-    return data
+    return transformed
 end
 
 
