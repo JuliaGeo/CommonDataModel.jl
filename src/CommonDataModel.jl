@@ -59,6 +59,10 @@ abstract type AbstractVariable{T,N} <: AbstractArray{T, N}
 end
 
 
+struct CFStdName
+    name::Symbol
+end
+
 const SymbolOrString = Union{Symbol, AbstractString}
 
 include("dataset.jl")
@@ -66,6 +70,7 @@ include("variable.jl")
 include("cfvariable.jl")
 include("attribute.jl")
 include("dimension.jl")
+include("cfconventions.jl")
 
 end # module CommonDataModel
 

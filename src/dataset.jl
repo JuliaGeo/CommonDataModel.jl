@@ -119,6 +119,71 @@ end
 Base.getindex(ds::AbstractDataset,varname) = cfvariable(ds,varname)
 
 
+
+"""
+    varbyattrib(ds, attname = attval)
+
+Returns a list of variable(s) which has the attribute `attname` matching the value `attval`
+in the dataset `ds`.
+The list is empty if the none of the variables has the match.
+The output is a list of `CFVariable`s.
+
+# Examples
+
+Load all the data of the first variable with standard name "longitude" from the
+NetCDF file `results.nc`.
+
+```julia-repl
+julia> ds = NCDataset("results.nc", "r");
+julia> data = varbyattrib(ds, standard_name = "longitude")[1][:]
+```
+
+"""
+function varbyattrib(ds::Union{AbstractDataset,AbstractVariable}; kwargs...)
+    # Start with an empty list of variables
+    varlist = []
+
+    # Loop on the variables
+    for v in keys(ds)
+        var = ds[v]
+
+        matchall = true
+
+        for (attsym,attval) in kwargs
+            attname = String(attsym)
+
+            # Check if the variable has the desired attribute
+            if attname in attribnames(var)
+                # Check if the attribute value is the selected one
+                if attrib(var,attname) != attval
+                    matchall = false
+                    break
+                end
+            else
+                matchall = false
+                break
+            end
+        end
+
+        if matchall
+            push!(varlist, var)
+        end
+    end
+
+    return varlist
+end
+
+function Base.getindex(ds::Union{AbstractDataset,AbstractVariable},n::CFStdName)
+    ncvars = varbyattrib(ds, standard_name = String(n.name))
+    if length(ncvars) == 1
+        return ncvars[1]
+    else
+        throw(KeyError("$(length(ncvars)) matches while searching for a variable with standard_name attribute equal to $(n.name)"))
+    end
+end
+
+
+
 for (item_color,default) in (
     (:section_color, :red),
     (:attribute_color, :cyan),
