@@ -173,7 +173,8 @@ function varbyattrib(ds::Union{AbstractDataset,AbstractVariable}; kwargs...)
     return varlist
 end
 
-function Base.getindex(ds::Union{AbstractDataset,AbstractVariable},n::CFStdName)
+# avoid ambiguity
+function getindex_byname(ds::Union{AbstractDataset,AbstractVariable},n::CFStdName)
     ncvars = varbyattrib(ds, standard_name = String(n.name))
     if length(ncvars) == 1
         return ncvars[1]
@@ -182,6 +183,8 @@ function Base.getindex(ds::Union{AbstractDataset,AbstractVariable},n::CFStdName)
     end
 end
 
+Base.getindex(ds::AbstractDataset,n::CFStdName) = getindex_byname(ds,n)
+Base.getindex(v::AbstractVariable,n::CFStdName) = getindex_byname(v,n)
 
 
 for (item_color,default) in (
