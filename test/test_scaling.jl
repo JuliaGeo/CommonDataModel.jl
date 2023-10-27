@@ -3,6 +3,7 @@ using Test
 import CommonDataModel as CDM
 using DataStructures
 using Dates
+import CommonDataModel: AbstractDataset, AbstractVariable, Attributes, Dimensions
 
 include("memory_dataset.jl")
 
@@ -138,4 +139,25 @@ md["data"][1,2] = DateTime(2000,2,1)
 
 
 @test CDM.dataset(md["data"]) == md
-close(md)
+
+
+
+md.attrib["history"] == "lala"
+
+
+@test haskey(md.attrib,"history")
+
+@test get(md.attrib,"foooo","bar") == "bar"
+
+@test collect(keys(md.attrib)) == ["history"]
+
+io = IOBuffer()
+show(io,md.attrib)
+str = String(take!(io))
+@test occursin("history",str)
+
+show(io,md.dim)
+str = String(take!(io))
+@test occursin("lon",str)
+
+#close(md)

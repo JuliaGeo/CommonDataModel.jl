@@ -64,3 +64,28 @@ function show_dim(io::IO, d)
         print(io, "Dimensions (file closed)")
     end
 end
+
+
+
+Base.keys(dims::Dimensions) = dimnames(dims.ds)
+Base.getindex(dims::Dimensions,name) = dim(dims.ds,name)
+Base.setindex(dims::Dimensions,name,data) = defDim(dims.ds,name,data)
+Base.show(io::IO,dims::Dimensions) = show_dim(io,dims)
+
+Base.length(a::Iterable) = length(keys(a))
+
+function Base.iterate(a::Iterable, state = collect(keys(a)))
+    if length(state) == 0
+        return nothing
+    end
+
+    return (state[1] => a[popfirst!(state)], state)
+end
+
+function Base.get(a::Iterable, name::SymbolOrString, default)
+    if haskey(a,name)
+        return a[name]
+    else
+        return default
+    end
+end

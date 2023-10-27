@@ -54,6 +54,13 @@ function show_attrib(io,a)
             print(io,"\n")
         end
     catch err
+        @debug "error while printing" err
         print(io,"Dataset attributes (file closed)")
     end
 end
+
+
+Base.keys(a::Attributes) = attribnames(a.ds)
+Base.getindex(a::Attributes,name) = attrib(a.ds,name)
+Base.setindex(a::Attributes,name,data) = defAttrib(a.ds,name,data)
+Base.show(io::IO,a::Attributes) = show_attrib(io,a)

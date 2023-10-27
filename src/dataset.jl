@@ -187,6 +187,23 @@ Base.getindex(ds::AbstractDataset,n::CFStdName) = getindex_byname(ds,n)
 Base.getindex(v::AbstractVariable,n::CFStdName) = getindex_byname(v,n)
 
 
+Base.keys(groups::Groups) = groupnames(groups.ds)
+Base.getindex(groups::Groups,name) = group(groups.ds,name)
+
+
+@inline function Base.getproperty(ds::Union{AbstractDataset,AbstractVariable},name::Symbol)
+    if (name == :attrib) && !hasfield(typeof(ds),name)
+        return Attributes(ds)
+    elseif (name == :dim) && !hasfield(typeof(ds),name)
+        return Dimensions(ds)
+    elseif (name == :group) && !hasfield(typeof(ds),name) && (ds <: AbstractDataset)
+        return Groups(ds)
+    else
+        return getfield(ds,name)
+    end
+end
+
+
 for (item_color,default) in (
     (:section_color, :red),
     (:attribute_color, :cyan),

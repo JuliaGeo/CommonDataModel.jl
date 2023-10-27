@@ -4,18 +4,18 @@ import CommonDataModel as CDM
 using DataStructures
 import CommonDataModel: defVar, unlimited, name, dimnames, dataset, variable, dim, attribnames, attrib, defDim, defAttrib
 
-struct MemoryVariable{T,N,TP} <: CDM.AbstractVariable{T,N}
+struct MemoryVariable{T,N,TP,TA <: AbstractArray{T,N}} <: CDM.AbstractVariable{T,N}
     parent_dataset::TP
     name::String
     dimnames::NTuple{N,String}
-    data::Array{T,N}
-    attrib::OrderedDict{String,Any}
+    data::TA
+    _attrib::OrderedDict{String,Any}
 end
 
 struct MemoryDataset <: CDM.AbstractDataset
     dim::OrderedDict{String,Int}
     variables::OrderedDict{String,MemoryVariable}
-    attrib::OrderedDict{String,Any}
+    _attrib::OrderedDict{String,Any}
     unlimited::Vector{String}
 end
 
@@ -30,8 +30,8 @@ Base.keys(md::MemoryDataset) = keys(md.variables)
 CDM.variable(md::MemoryDataset,varname::AbstractString) = md.variables[varname]
 CDM.dimnames(md::MemoryDataset) = keys(md.dim)
 CDM.dim(md::MemoryDataset,name::AbstractString) = md.dim[name]
-CDM.attribnames(md::Union{MemoryDataset,MemoryVariable}) = keys(md.attrib)
-CDM.attrib(md::Union{MemoryDataset,MemoryVariable},name::AbstractString) = md.attrib[name]
+CDM.attribnames(md::Union{MemoryDataset,MemoryVariable}) = keys(md._attrib)
+CDM.attrib(md::Union{MemoryDataset,MemoryVariable},name::AbstractString) = md._attrib[name]
 
 function CDM.defDim(md::MemoryDataset,name::AbstractString,len)
     if isinf(len)
@@ -56,7 +56,7 @@ function CDM.defVar(md::MemoryDataset,name::AbstractString,T::DataType,dimnames;
 end
 
 function CDM.defAttrib(md::Union{MemoryVariable,MemoryDataset},name::AbstractString,data);
-    md.attrib[name] = data
+    md._attrib[name] = data
 end
 
 function MemoryDataset()
@@ -66,4 +66,3 @@ function MemoryDataset()
         OrderedDict{String,Any}(),
         String[])
 end
-
