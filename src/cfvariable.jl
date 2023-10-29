@@ -386,7 +386,7 @@ end
 
 
 function Base.getindex(v::CFVariable,
-                       indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
+                       indexes::Union{Int,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...)
     data = v.var[indexes...]
     return CFtransformdata(data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
                            time_origin(v),time_factor(v),eltype(v))
