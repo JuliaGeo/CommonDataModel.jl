@@ -69,8 +69,11 @@ end
 
 Base.keys(dims::Dimensions) = dimnames(dims.ds)
 Base.getindex(dims::Dimensions,name) = dim(dims.ds,name)
-Base.setindex(dims::Dimensions,name,data) = defDim(dims.ds,name,data)
+Base.setindex!(dims::Dimensions,data,name) = defDim(dims.ds,name,data)
 Base.show(io::IO,dims::Dimensions) = show_dim(io,dims)
+
+unlimited(dims::Dimensions) = unlimited(dims.ds)
+
 
 Base.length(a::Iterable) = length(keys(a))
 

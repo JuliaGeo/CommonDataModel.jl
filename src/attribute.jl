@@ -62,5 +62,5 @@ end
 
 Base.keys(a::Attributes) = attribnames(a.ds)
 Base.getindex(a::Attributes,name) = attrib(a.ds,name)
-Base.setindex(a::Attributes,name,data) = defAttrib(a.ds,name,data)
+Base.setindex!(a::Attributes,data,name) = defAttrib(a.ds,name,data)
 Base.show(io::IO,a::Attributes) = show_attrib(io,a)

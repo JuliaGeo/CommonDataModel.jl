@@ -48,7 +48,7 @@ Optionally a variable can have attributes:
 
 For a writable-dataset, one should also implement:
 * `defAttrib`: define a attribute
-* `Base.setindex(v,data,indices...)`: set the data in `v` at the provided indices
+* `Base.setindex!(v,data,indices...)`: set the data in `v` at the provided indices
 
 """
 abstract type AbstractVariable{T,N} <: AbstractArray{T, N}
@@ -56,7 +56,7 @@ end
 
 """
 A collection of attributes with a Dict-like interface dispatching to
-`attribnames`, `attrib`, `defAttrib` for `keys`, `getindex` and `setindex`
+`attribnames`, `attrib`, `defAttrib` for `keys`, `getindex` and `setindex!`
 respectively.
 """
 struct Attributes{TDS<:Union{AbstractDataset,AbstractVariable}} <: AbstractDict{SymbolOrString,Any}
@@ -65,7 +65,7 @@ end
 
 """
 A collection of dimensions with a Dict-like interface dispatching to
-`dimnames`, `dim`, `defDim` for `keys`, `getindex` and `setindex`
+`dimnames`, `dim`, `defDim` for `keys`, `getindex` and `setindex!`
 respectively.
 """
 struct Dimensions{TDS<:AbstractDataset} <: AbstractDict{SymbolOrString,Any}

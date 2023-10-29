@@ -196,7 +196,7 @@ Base.getindex(groups::Groups,name) = group(groups.ds,name)
         return Attributes(ds)
     elseif (name == :dim) && !hasfield(typeof(ds),name)
         return Dimensions(ds)
-    elseif (name == :group) && !hasfield(typeof(ds),name) && (ds <: AbstractDataset)
+    elseif (name == :group) && !hasfield(typeof(ds),name) && (ds isa AbstractDataset)
         return Groups(ds)
     else
         return getfield(ds,name)
