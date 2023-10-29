@@ -385,21 +385,22 @@ end
 @inline CFinvtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DT) = CFtransform_replace_missing(data,fv)
 
 
-function Base.getindex(v::CFVariable, indexes...)
+function Base.getindex(v::CFVariable,
+                       indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
     data = v.var[indexes...]
     return CFtransformdata(data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
                            time_origin(v),time_factor(v),eltype(v))
 end
 
-function Base.setindex!(v::CFVariable,data::Array{Missing,N},indexes...) where N
+function Base.setindex!(v::CFVariable,data::Array{Missing,N},indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where N
     v.var[indexes...] = fill(fillvalue(v),size(data))
 end
 
-function Base.setindex!(v::CFVariable,data::Missing,indexes...)
+function Base.setindex!(v::CFVariable,data::Missing,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
     v.var[indexes...] = fillvalue(v)
 end
 
-function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes...) where N where T <: Union{AbstractCFDateTime,DateTime,Union{Missing,DateTime,AbstractCFDateTime}}
+function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where N where T <: Union{AbstractCFDateTime,DateTime,Union{Missing,DateTime,AbstractCFDateTime}}
 
     if calendar(v) !== nothing
         # can throw an convertion error if calendar attribute already exists and
@@ -414,7 +415,7 @@ function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes...) wher
 end
 
 
-function Base.setindex!(v::CFVariable,data,indexes...)
+function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
     v.var[indexes...] = CFinvtransformdata(
         data,fill_and_missing_values(v),
         scale_factor(v),add_offset(v),
