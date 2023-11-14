@@ -71,8 +71,9 @@ end
 
 function _defVar(ds::AbstractDataset,name::SymbolOrString,data,nctype,vardimnames; attrib = [], kwargs...)
     # define the dimensions if necessary
-    for (i,dimname) in enumerate(vardimnames)
+    for (i,dimname) in enumerate(String.(vardimnames))
         if !(dimname in dimnames(ds))
+            @debug "define dimension" dimname dimnames(ds)
             defDim(ds,dimname,size(data,i))
         elseif !(dimname in unlimited(ds))
             dimlen = dim(ds,dimname)

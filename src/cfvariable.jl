@@ -385,8 +385,7 @@ end
 @inline CFinvtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DT) = CFtransform_replace_missing(data,fv)
 
 
-function Base.getindex(v::CFVariable,
-                       indexes::Union{Int,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...)
+function Base.getindex(v::CFVariable, indexes::Union{Integer,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...)
     data = v.var[indexes...]
     return CFtransformdata(data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
                            time_origin(v),time_factor(v),eltype(v))
@@ -459,3 +458,27 @@ function _getattrib(ds,v,parentname,attribname,default)
         end
     end
 end
+
+
+
+function _isrelated(v1::AbstractVariable,v2::AbstractVariable)
+    dimnames(v1) ⊆ dimnames(v2)
+end
+
+function Base.keys(v::AbstractVariable)
+    ds = dataset(v)
+    return [varname for (varname,ncvar) in ds if _isrelated(ncvar,v)]
+end
+
+
+function Base.getindex(v::AbstractVariable,name::SymbolOrString)
+    ds = dataset(v)
+    ncvar = ds[name]
+    if _isrelated(ncvar,v)
+        return ncvar
+    else
+        throw(KeyError(name))
+    end
+end
+
+Base.getindex(v::CFVariable,n::CFStdName) = getindex_byname(v,n)

@@ -2,7 +2,15 @@
 """
     CommonDatamodel.dimnames(ds::AbstractDataset)
 
-Return an iterable of all dimension names in `ds`.
+Return an iterable of all dimension names in `ds`. This
+information can also be accessed using the property `ds.dim`:
+
+# Examples
+
+```julia
+ds = NCDataset("results.nc", "r");
+dimnames = keys(ds.dim)
+```
 """
 dimnames(ds::Union{AbstractDataset,AbstractVariable}) = ()
 
@@ -62,5 +70,33 @@ function show_dim(io::IO, d)
         end
     catch err
         print(io, "Dimensions (file closed)")
+    end
+end
+
+
+
+Base.keys(dims::Dimensions) = dimnames(dims.ds)
+Base.getindex(dims::Dimensions,name) = dim(dims.ds,name)
+Base.setindex!(dims::Dimensions,data,name) = defDim(dims.ds,name,data)
+Base.show(io::IO,dims::Dimensions) = show_dim(io,dims)
+
+unlimited(dims::Dimensions) = unlimited(dims.ds)
+
+
+Base.length(a::Iterable) = length(keys(a))
+
+function Base.iterate(a::Iterable, state = collect(keys(a)))
+    if length(state) == 0
+        return nothing
+    end
+
+    return (state[1] => a[popfirst!(state)], state)
+end
+
+function Base.get(a::Iterable, name::SymbolOrString, default)
+    if haskey(a,name)
+        return a[name]
+    else
+        return default
     end
 end
