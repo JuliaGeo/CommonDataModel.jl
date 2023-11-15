@@ -10,9 +10,10 @@ Base.string(n::CFStdName) = string(n.name)
 
 
 """
-    ncvar = NCDatasets.ancillaryvariables(ncv::NCDatasets.CFVariable,modifier)
+    ncvar = CommonDataModel.ancillaryvariables(ncv::NCDatasets.CFVariable,modifier)
 
-Return the first ancillary variables from the NetCDF variable `ncv` with the
+Return the first ancillary variables from the NetCDF (or other format)
+variable `ncv` with the
 standard name modifier `modifier`. It can be used for example to access
 related variable like status flags.
 """
@@ -42,7 +43,7 @@ end
 allowmissing(x::AbstractArray{T}) where {T} = convert(AbstractArray{Union{T, Missing}}, x)
 
 """
-    data = filter(ncv, indices...; accepted_status_flags = nothing)
+    data = CommonDataModel.filter(ncv, indices...; accepted_status_flags = nothing)
 
 Load and filter observations by replacing all variables without an acepted status
 flag to `missing`. It is used the attribute `ancillary_variables` to identify
@@ -104,7 +105,7 @@ end
 
 Find the coordinate of the variable `v` by the standard name `standard_name`
 or some [standardized heuristics based on units](https://web.archive.org/web/20190918144052/http://cfconventions.org/cf-conventions/cf-conventions.html#latitude-coordinate). If the heuristics fail to detect the coordinate,
-consider to modify the netCDF file to add the `standard_name` attribute.
+consider to modify the file to add the `standard_name` attribute.
 All dimensions of the coordinate must also be dimensions of the variable `v`.
 
 ## Example

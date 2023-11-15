@@ -49,7 +49,7 @@ end
 
 # data has the type e.g. Vector{DateTime}, Array{Union{Missing,DateTime},3} or
 # Vector{DateTime360Day}
-# Data is always stored as Float64 in the NetCDF file
+# Data is always stored as Float64 in the file
 function defVar(ds::AbstractDataset,
                 name::SymbolOrString,
                 data::AbstractArray{<:Union{Missing,T},N},

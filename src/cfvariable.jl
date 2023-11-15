@@ -122,7 +122,7 @@ function cfvariable(ds,
         @warn "variable '$varname' has a numeric type but the corresponding " *
             "missing_value ($missing_value) is a character or string. " *
             "Comparing, e.g. an integer and a string (1 == \"1\") will always evaluate to false. " *
-            "See the function NCDatasets.cfvariable how to manually override the missing_value attribute."
+            "See the function CommonDataModel.cfvariable how to manually override the missing_value attribute."
     end
 
     time_origin = nothing
@@ -602,12 +602,12 @@ Base.Array(v::AbstractVariable{T,N}) where {T,N} = v[ntuple(i -> :, Val(N))...]
 
 
 """
-    NCDatasets.load!(ncvar::CFVariable, data, buffer, indices)
+    CommonDataModel.load!(ncvar::CFVariable, data, buffer, indices)
 
-Loads a NetCDF variables `ncvar` in-place and puts the result in `data` (an
+Loads a NetCDF (or other format) variables `ncvar` in-place and puts the result in `data` (an
 array of `eltype(ncvar)`) along the specified `indices`. `buffer` is a temporary
  array of the same size as data but the type should be `eltype(ncv.var)`, i.e.
-the corresponding type in the NetCDF files (before applying `scale_factor`,
+the corresponding type in the files (before applying `scale_factor`,
 `add_offset` and masking fill values). Scaling and masking will be applied to
 the array `data`.
 
