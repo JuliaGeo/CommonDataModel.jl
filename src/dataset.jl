@@ -191,6 +191,19 @@ Base.keys(groups::Groups) = groupnames(groups.ds)
 Base.getindex(groups::Groups,name) = group(groups.ds,name)
 
 
+"Initialize the ds._boundsmap variable"
+function initboundsmap!(ds)
+    ds._boundsmap = Dict{String,String}()
+    for vname in keys(ds)
+        v = variable(ds,vname)
+        bounds = get(v.attrib,"bounds",nothing)
+
+        if bounds !== nothing
+            ds._boundsmap[bounds] = vname
+        end
+    end
+end
+
 @inline function Base.getproperty(ds::Union{AbstractDataset,AbstractVariable},name::Symbol)
     if (name == :attrib) && !hasfield(typeof(ds),name)
         return Attributes(ds)

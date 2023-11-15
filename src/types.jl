@@ -87,4 +87,71 @@ struct CFStdName
     name::Symbol
 end
 
-const Iterable = Union{Attributes,Dimensions,Groups}
+# Multi-file related type definitions
+
+mutable struct MFVariable{T,N,M,TA,TDS} <: AbstractVariable{T,N}
+    ds::TDS
+    var::CatArrays.CatArray{T,N,M,TA}
+    dimnames::NTuple{N,String}
+    varname::String
+end
+
+mutable struct MFCFVariable{T,N,M,TA,TV,TDS} <: AbstractVariable{T,N}
+    ds::TDS
+    cfvar::CatArrays.CatArray{T,N,M,TA}
+    var::TV
+    dimnames::NTuple{N,String}
+    varname::String
+end
+
+mutable struct MFDataset{T,N,S<:AbstractString} <: AbstractDataset where T <: AbstractDataset
+    ds::Array{T,N}
+    aggdim::S
+    isnewdim::Bool
+    constvars::Vector{Symbol}
+    _boundsmap::Dict{String,String}
+end
+
+# DeferDataset are Dataset which are open only when there are accessed and
+# closed directly after. This is necessary to work with a large number
+# of NetCDF files (e.g. more than 1000).
+
+struct Resource
+    filename::String
+    mode::String
+    metadata::OrderedDict
+end
+
+mutable struct DeferDataset{TDS} <: AbstractDataset
+    r::Resource
+    groupname::String
+    data::OrderedDict
+    _boundsmap::Union{Nothing,Dict{String,String}}
+end
+
+mutable struct DeferVariable{T,N,TDS} <: AbstractVariable{T,N}
+    r::Resource
+    varname::String
+    data::OrderedDict
+end
+
+# view of subsets
+
+struct SubVariable{T,N,TA,TI,TAttrib,TV} <: AbstractVariable{T,N}
+    parent::TA
+    indices::TI
+    attrib::TAttrib
+    # unpacked variable
+    var::TV
+end
+
+struct SubDataset{TD,TI,TA,TG}  <: AbstractDataset
+    ds::TD
+    indices::TI
+    attrib::TA
+    group::TG
+end
+
+
+const Iterable = Union{Attributes,Dimensions,Groups,AbstractDataset}
+
