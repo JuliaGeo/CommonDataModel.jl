@@ -449,8 +449,6 @@ function _getattrib(ds,v,parentname,attribname,default)
     end
 end
 
-
-
 function _isrelated(v1::AbstractVariable,v2::AbstractVariable)
     dimnames(v1) ⊆ dimnames(v2)
 end
@@ -471,16 +469,13 @@ function Base.getindex(v::AbstractVariable,name::SymbolOrString)
     end
 end
 
-Base.getindex(v::CFVariable,n::CFStdName) = getindex_byname(v,n)
-
-
 
 """
     dimnames(v::CFVariable)
 
 Return a tuple of strings with the dimension names of the variable `v`.
 """
-dimnames(v::Union{CFVariable,MFCFVariable})  = dimnames(v.var)
+dimnames(v::Union{CFVariable,MFCFVariable}) = dimnames(v.var)
 
 name(v::Union{CFVariable,MFCFVariable}) = name(v.var)
 chunking(v::CFVariable,storage,chunksize) = chunking(v.var,storage,chunksize)
@@ -494,9 +489,6 @@ checksum(v::CFVariable) = checksum(v.var)
 
 
 fillmode(v::CFVariable) = fillmode(v.var)
-
-
-
 
 # indexing with vector of integers
 
@@ -547,7 +539,7 @@ function _range_indices_dest(of,v,rest...)
 end
 range_indices_dest(ri...) = _range_indices_dest((),ri...)
 
-function Base.getindex(v::Union{MFVariable,SubVariable},indices::Union{Int,Colon,AbstractRange{<:Integer},Vector{Int}}...)
+function Base.getindex(v::Union{MFVariable,SubVariable},indices::Union{Int,Colon,AbstractRange{<:Integer},Vector{<:Integer}}...)
     @debug "transform vector of indices to ranges"
 
     sz_source = size(v)
