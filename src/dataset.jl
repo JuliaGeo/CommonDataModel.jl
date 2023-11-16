@@ -193,7 +193,7 @@ Base.getindex(groups::Groups,name) = group(groups.ds,name)
 
 "Initialize the ds._boundsmap variable"
 function initboundsmap!(ds)
-    ds._boundsmap = Dict{String,String}()
+    empty!(ds._boundsmap)
     for vname in keys(ds)
         v = variable(ds,vname)
         bounds = get(v.attrib,"bounds",nothing)

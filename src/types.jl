@@ -102,14 +102,14 @@ end
 
 # Multi-file related type definitions
 
-mutable struct MFVariable{T,N,M,TA,TDS} <: AbstractVariable{T,N}
+struct MFVariable{T,N,M,TA,TDS} <: AbstractVariable{T,N}
     ds::TDS
     var::CatArrays.CatArray{T,N,M,TA}
     dimnames::NTuple{N,String}
     varname::String
 end
 
-mutable struct MFCFVariable{T,N,M,TA,TV,TDS} <: AbstractVariable{T,N}
+struct MFCFVariable{T,N,M,TA,TV,TDS} <: AbstractVariable{T,N}
     ds::TDS
     cfvar::CatArrays.CatArray{T,N,M,TA}
     var::TV
@@ -117,7 +117,7 @@ mutable struct MFCFVariable{T,N,M,TA,TV,TDS} <: AbstractVariable{T,N}
     varname::String
 end
 
-mutable struct MFDataset{T,N,S<:AbstractString} <: AbstractDataset where T <: AbstractDataset
+struct MFDataset{T,N,S<:AbstractString} <: AbstractDataset where T <: AbstractDataset
     ds::Array{T,N}
     aggdim::S
     isnewdim::Bool
@@ -135,14 +135,14 @@ struct Resource
     metadata::OrderedDict
 end
 
-mutable struct DeferDataset{TDS} <: AbstractDataset
+struct DeferDataset{TDS} <: AbstractDataset
     r::Resource
     groupname::String
     data::OrderedDict
-    _boundsmap::Union{Nothing,Dict{String,String}}
+    _boundsmap::Dict{String,String}
 end
 
-mutable struct DeferVariable{T,N,TDS} <: AbstractVariable{T,N}
+struct DeferVariable{T,N,TDS} <: AbstractVariable{T,N}
     r::Resource
     varname::String
     data::OrderedDict

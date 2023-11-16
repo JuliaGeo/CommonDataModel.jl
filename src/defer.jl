@@ -53,7 +53,7 @@ end
 
 
 function DeferDataset(TDS,r::Resource,groupname::String,data::OrderedDict)
-   _boundsmap = nothing
+   _boundsmap = Dict{String,String}()
    dds = DeferDataset{TDS}(r,groupname,data,_boundsmap)
    if (r.mode == "r")
        initboundsmap!(dds)
