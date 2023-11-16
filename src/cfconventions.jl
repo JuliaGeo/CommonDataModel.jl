@@ -10,7 +10,7 @@ Base.string(n::CFStdName) = string(n.name)
 
 
 """
-    ncvar = CommonDataModel.ancillaryvariables(ncv::NCDatasets.CFVariable,modifier)
+    ncvar = CommonDataModel.ancillaryvariables(ncv::CFVariable,modifier)
 
 Return the first ancillary variables from the NetCDF (or other format)
 variable `ncv` with the

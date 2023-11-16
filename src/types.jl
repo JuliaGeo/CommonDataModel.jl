@@ -54,6 +54,21 @@ For a writable-dataset, one should also implement:
 abstract type AbstractVariable{T,N} <: AbstractArray{T, N}
 end
 
+
+"""
+Variable (with applied transformations following the CF convention)
+"""
+mutable struct CFVariable{T,N,TV,TA,TSA}  <: AbstractVariable{T, N}
+    # this var is generally a `Variable` type
+    var::TV
+    # Dict-like object for all attributes read from disk
+    attrib::TA
+    # a named tuple with fill value, scale factor, offset,...
+    # immutable for type-stability
+    _storage_attrib::TSA
+end
+
+
 """
 A collection of attributes with a Dict-like interface dispatching to
 `attribnames`, `attrib`, `defAttrib` for `keys`, `getindex` and `setindex!`
@@ -154,4 +169,3 @@ end
 
 
 const Iterable = Union{Attributes,Dimensions,Groups,AbstractDataset}
-
