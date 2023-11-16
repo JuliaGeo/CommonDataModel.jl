@@ -25,6 +25,16 @@ function defAttrib(ds::AbstractDataset,name::SymbolOrString,data)
 end
 
 
+"""
+    CommonDatamodel.delAttrib(ds::Union{AbstractDataset,AbstractVariable},name::SymbolOrString,data)
+
+Deletes an attribute with the name `attrib` in the data set or variable `ds`.
+"""
+function delAttrib(ds::Union{AbstractDataset,AbstractVariable},name::SymbolOrString,data)
+    error("unimplemnted for abstract type")
+end
+
+
 attribs(ds::Union{AbstractDataset,AbstractVariable}) =
     OrderedDict((dn,attrib(ds,dn)) for dn in attribnames(ds))
 
@@ -102,3 +112,12 @@ close(ds)
 Base.setindex!(a::Attributes,data,name) = defAttrib(a.ds,name,data)
 
 Base.show(io::IO,a::Attributes) = show_attrib(io,a)
+
+
+
+"""
+    Base.delete!(a::Attributes, name)
+
+Delete the attribute `name` from the attribute list `a`.
+"""
+Base.delete!(a::Attributes,name::SymbolOrString) = delAttrib(a.ds,name)

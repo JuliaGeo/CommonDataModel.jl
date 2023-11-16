@@ -14,9 +14,10 @@ name(v::CFVariable) = name(v.var)
 dataset(v::CFVariable) = dataset(v.var)
 
 
-attribnames(v::CFVariable) = keys(v.attrib)
-attrib(v::CFVariable,name::SymbolOrString) = v.attrib[name]
+attribnames(v::CFVariable) = attribnames(v.var)
+attrib(v::CFVariable,name::SymbolOrString) = attrib(v.var,name)
 defAttrib(v::CFVariable,name,value) = defAttrib(v.var,name,value)
+delAttrib(v::CFVariable,name) = delAttrib(v.var,name)
 
 dimnames(v::CFVariable) = dimnames(v.var)
 dim(v::CFVariable,name::SymbolOrString) = dim(v.var,name)
@@ -154,8 +155,8 @@ function cfvariable(ds,
 
     rettype = _get_rettype(ds, calendar, fillvalue, missing_value, scaledtype)
 
-    return CFVariable{rettype,ndims(v),typeof(v),typeof(attrib),typeof(storage_attrib)}(
-        v,attrib,storage_attrib)
+    return CFVariable{rettype,ndims(v),typeof(v),typeof(storage_attrib)}(
+        v,storage_attrib)
 
 end
 
