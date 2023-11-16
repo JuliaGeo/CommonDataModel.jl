@@ -74,6 +74,48 @@ function MFDataset(ds,aggdim,isnewdim,constvars)
 end
 
 
+function MFDataset(TDS,fnames::AbstractArray{<:AbstractString,N},mode = "r"; aggdim = nothing,
+                   deferopen = true,
+                   _aggdimconstant = false,
+                   isnewdim = false,
+                   constvars = Union{Symbol,String}[],
+                   ) where N
+    if !(mode == "r" || mode == "a")
+        throw(ArgumentError("""Unsupported mode for multi-file dataset (mode = $(mode)). Mode must be "r" or "a"."""))
+    end
+
+    if deferopen
+        @assert mode == "r"
+
+        if _aggdimconstant
+            # load only metadata from master
+            master_index = 1
+            ds_master = TDS(fnames[master_index],mode);
+            data_master = metadata(ds_master)
+            ds = Vector{Union{TDS,DeferDataset}}(undef,length(fnames))
+            #ds[master_index] = ds_master
+            for (i,fname) in enumerate(fnames)
+                #if i !== master_index
+                ds[i] = DeferDataset(TDS,fname,mode,data_master)
+                #end
+            end
+        else
+            ds = DeferDataset.(fnames,mode)
+        end
+    else
+        ds = TDS.(fnames,mode);
+    end
+
+    if (aggdim == nothing) && !isnewdim
+        # first unlimited dimensions
+        aggdim = unlimited(ds[1].dim)[1]
+    end
+
+    mfds = MFDataset(ds,aggdim,isnewdim,Symbol.(constvars))
+    return mfds
+end
+
+
 Base.getindex(v::Union{MFVariable,DeferVariable},ci::CartesianIndices) = v[ci.indices...]
 Base.setindex!(v::Union{MFVariable,DeferVariable},data,ci::CartesianIndices) = setindex!(v,data,ci.indices...)
 
