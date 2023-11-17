@@ -22,7 +22,7 @@ Optionally a data set can have attributes and groups:
 * `groupnames(ds)`: should be an iterable with all group names
 * `group(ds,name)`: group corresponding to the name
 
-For a writable-dataset, one should also implement:
+For a writable dataset, one should also implement:
 * `defDim`: define a dimension
 * `defAttrib`: define a attribute
 * `defVar`: define a variable
@@ -46,7 +46,7 @@ Optionally a variable can have attributes:
 * `attribnames(v)`: should be an iterable with all attribute names
 * `attrib(v,name)`: attribute value corresponding to name
 
-For a writable-dataset, one should also implement:
+For a writable dataset, one should also implement:
 * `defAttrib`: define a attribute
 * `Base.setindex!(v,data,indices...)`: set the data in `v` at the provided indices
 
