@@ -40,12 +40,12 @@ attribs(ds::Union{AbstractDataset,AbstractVariable}) =
 
 
 
-"""
+#=
     CommonDatamodel.show_attrib(io,a)
 
 Print a list all attributes (key/values pairs) in `a` to IO stream `io`.
 The IO property `:level` is used for indentation.
-"""
+=#
 function show_attrib(io,a)
     level = get(io, :level, 0)
     indent = " " ^ level

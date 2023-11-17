@@ -428,13 +428,13 @@ function boundsParentVar(ds,varname)
 end
 
 
-"""
+#=
     _getattrib(ds,v,parentname,attribname,default)
 
 Get an attribute, looking also at the parent variable name
 (linked via the bounds attribute as following the CF conventions).
 The default value is returned if the attribute cannot be found.
-"""
+=#
 function _getattrib(ds,v,parentname,attribname,default)
     val = get(v.attrib,attribname,nothing)
     if val !== nothing

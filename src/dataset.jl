@@ -224,7 +224,7 @@ Base.keys(groups::Groups) = groupnames(groups.ds)
 Base.getindex(groups::Groups,name) = group(groups.ds,name)
 
 
-"Initialize the ds._boundsmap variable"
+# Initialize the ds._boundsmap variable
 function initboundsmap!(ds)
     empty!(ds._boundsmap)
     for vname in keys(ds)

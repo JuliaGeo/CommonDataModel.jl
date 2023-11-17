@@ -23,12 +23,12 @@ mutable struct CatArray{T,N,M,TA} <: AbstractArray{T,N} where TA <: AbstractArra
     sz::NTuple{N,Int}
 end
 
-"""
+#=
     C = CatArray(dim,array1,array2,...)
 
 Create a concatenated array view from a list of arrays. Individual
 elements can be accessed by subscribs
-"""
+=#
 function CatArray(dim::Int,arrays...)
     M = length(arrays)
 

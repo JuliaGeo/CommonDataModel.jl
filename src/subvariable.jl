@@ -36,13 +36,13 @@ _subsub(indices,i,l,ip,rest...) = _subsub((indices...,ip[i[l]]),i,l+1,rest...)
 _subsub(indices,i,l,ip::Number,rest...) = _subsub((indices...,ip),i,l,rest...)
 _subsub(indices,i,l,ip::Colon,rest...) = _subsub((indices...,i[l]),i,l+1,rest...)
 
-"""
+#=
     j = subsub(parentindices,indices)
 
 Computed the tuple of indices `j` so that
 `A[parentindices...][indices...] = A[j...]` for any array `A` and any tuple of
 valid indices `parentindices` and `indices`
-"""
+=#
 subsub(parentindices,indices) = _subsub((),indices,1,parentindices...)
 
 materialize(v::SubVariable) = v.parent[v.indices...]
