@@ -153,7 +153,7 @@ because both variables are related thought the bounds attribute following the CF
 
 See also [`cfvariable(ds, varname)`](@ref).
 """
-function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
+function Base.getindex(ds::AbstractDataset,varname)
     return cfvariable(ds, varname)
 end
 
