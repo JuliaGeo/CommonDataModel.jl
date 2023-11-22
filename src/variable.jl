@@ -193,6 +193,13 @@ end
 
 
 
+chunking(v::AbstractVariable) = (:contiguous,size(v))
+deflate(v::AbstractVariable) = (false,false,0)
+checksum(v::AbstractVariable) = :nochecksum
+
+fillvalue(v::AbstractVariable{T}) where T = v.attrib["_FillValue"]::T
+
+
 # computes the shape of the array of size `sz` after applying the indexes
 # size(a[indexes...]) == _shape_after_slice(size(a),indexes...)
 

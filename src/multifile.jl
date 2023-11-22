@@ -60,6 +60,11 @@ function group(mfds::MFDataset,name::SymbolOrString)
     return MFDataset(ds,mfds.aggdim,mfds.isnewdim,constvars)
 end
 
+function parentdataset(mfds::MFDataset)
+    ds = parentdataset.(mfds.ds)
+    return MFDataset(ds,mfds.aggdim,mfds.isnewdim,mfds.constvars)
+end
+
 Base.Array(v::MFVariable) = Array(v.var)
 
 iswritable(mfds::MFDataset) = iswritable(mfds.ds[1])
@@ -100,7 +105,7 @@ function MFDataset(TDS,fnames::AbstractArray{<:AbstractString,N},mode = "r"; agg
                 #end
             end
         else
-            ds = DeferDataset.(fnames,mode)
+            ds = DeferDataset.(TDS,fnames,mode)
         end
     else
         ds = TDS.(fnames,mode);
@@ -134,7 +139,10 @@ end
 function path(mfds::MFDataset)
     path(mfds.ds[1]) * "…" * path(mfds.ds[end])
 end
-groupname(mfds::MFDataset) = groupname(mfds.ds[1])
+
+name(mfds::MFDataset) = name(mfds.ds[1])
+# to depreciate?
+groupname(mfds::MFDataset) = name(mfds.ds[1])
 
 function Base.keys(mfds::MFDataset)
     if mfds.aggdim == ""
@@ -230,7 +238,6 @@ function cfvariable(mfds::MFDataset,varname::SymbolOrString)
 end
 
 
-fillvalue(v::Union{MFVariable{T},MFCFVariable{T}}) where T = v.attrib["_FillValue"]::T
 dataset(v::Union{MFVariable,MFCFVariable}) = v.ds
 
 

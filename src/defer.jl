@@ -30,7 +30,7 @@ function metadata(ds::AbstractDataset)
             :dimensions => dimnames(ncvar),
             :chunksize => chunksizes,
             :storage => storage,
-            :fillvalue => fillvalue(ncvar.var),
+            #:fillvalue => fillvalue(ncvar.var),
             :shuffle => isshuffled,
             :deflate => isdeflated,
             :deflatelevel => deflatelevel,

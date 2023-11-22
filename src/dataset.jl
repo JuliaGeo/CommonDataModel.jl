@@ -17,6 +17,9 @@ only a single group, this will be always the root group `"/"`.
 """
 name(ds::AbstractDataset) = "/"
 
+parentdataset(ds::AbstractDataset) = nothing
+sync(ds::AbstractDataset) = nothing
+
 """
     CommonDatamodel.groupnames(ds::AbstractDataset)
 
@@ -153,7 +156,7 @@ because both variables are related thought the bounds attribute following the CF
 
 See also [`cfvariable(ds, varname)`](@ref).
 """
-function Base.getindex(ds::AbstractDataset,varname)
+function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
     return cfvariable(ds, varname)
 end
 
@@ -236,6 +239,89 @@ function initboundsmap!(ds)
         end
     end
 end
+
+
+"""
+    write(dest::AbstractDataset, src::AbstractDataset; include = keys(src), exclude = [])
+
+Write the variables of `src` dataset into an empty `dest` dataset (which must be opened in mode `"a"` or `"c"`).
+The keywords `include` and `exclude` configure which variable of `src` should be included
+(by default all), or which should be `excluded` (by default none).
+
+If the first argument is a file name, then the dataset is open in create mode (`"c"`).
+
+This function is useful when you want to save the dataset from a multi-file dataset.
+
+To save a subset, one can use the view function `view` to virtually slice
+a dataset:
+
+## Example
+
+```
+NCDataset(fname_src) do ds
+    write(fname_slice,view(ds, lon = 2:3))
+end
+```
+
+All variables in the source file `fname_src` with a dimension `lon` will be sliced
+along the indices `2:3` for the `lon` dimension. All attributes (and variables
+without a dimension `lon`) will be copied over unmodified.
+"""
+function Base.write(dest::AbstractDataset, src::AbstractDataset;
+                    include = keys(src),
+                    exclude = String[],
+                    _ignore_checksum = false,
+                    )
+
+
+    unlimited_dims = unlimited(src)
+
+    for (dimname,dimlength) in dims(src)
+        isunlimited = dimname in unlimited_dims
+
+        # if haskey(dest.dim,dimname)
+        #     # check length
+        #     if (dest.dim[dimname] !== src.dim[dimname]) && !isunlimited
+        #         throw(DimensionMismatch("length of the dimensions $dimname are inconstitent in files $(path(dest)) and $(path(src))"))
+        #     end
+        # else
+            if isunlimited
+                defDim(dest, dimname, Inf)
+            else
+                defDim(dest, dimname, dimlength)
+            end
+        # end
+    end
+
+    # loop over variables
+    for varname in include
+        (varname ∈ exclude) && continue
+        @debug "Writing variable $varname..."
+
+        kwargs =
+            if _ignore_checksum
+                (checksum = nothing,)
+            else
+                ()
+            end
+
+        defVar(dest,variable(src,varname); kwargs...)
+    end
+
+    # loop over all global attributes
+    for (attribname,attribval) in attribs(src)
+        dest.attrib[attribname] = attribval
+    end
+
+    # loop over all groups
+    for (groupname,groupsrc) in groups(src)
+        groupdest = defGroup(dest,groupname)
+        write(groupdest,groupsrc)
+    end
+
+    return dest
+end
+
 
 @inline function Base.getproperty(ds::Union{AbstractDataset,AbstractVariable},name::Symbol)
     if (name == :attrib) && !hasfield(typeof(ds),name)
