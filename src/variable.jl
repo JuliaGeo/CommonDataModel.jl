@@ -59,8 +59,8 @@ Default fill-value for the given type from NetCDF.
 @inline fillvalue(::Type{UInt32})  = UInt32(4294967295)
 @inline fillvalue(::Type{Int64})   = Int64(-9223372036854775806)
 @inline fillvalue(::Type{UInt64})  = UInt64(18446744073709551614)
-@inline fillvalue(::Type{Float32}) = 9.9692099683868690e+36
-@inline fillvalue(::Type{Float64}) = 9.9692099683868690f+36
+@inline fillvalue(::Type{Float32}) = 9.9692099683868690f+36
+@inline fillvalue(::Type{Float64}) = 9.9692099683868690e+36
 @inline fillvalue(::Type{Char})    = '\0'
 @inline fillvalue(::Type{String})  = ""
 
