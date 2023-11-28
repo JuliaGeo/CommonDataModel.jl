@@ -1,12 +1,12 @@
-using NCDatasets
+#using NCDatasets
 using Test
 import CommonDataModel as CDM
 using DataStructures
 using Dates
-import CommonDataModel: AbstractDataset, AbstractVariable, Attributes, Dimensions
+import CommonDataModel: AbstractDataset, AbstractVariable, Attributes, Dimensions, fillvalue
 
 fname = tempname()
-ds = NCDataset(fname,"c")
+ds = MemoryDataset(fname,"c")
 
 data = Array{Union{Missing,Float32},2}(undef,10,10)
 data .= 3
@@ -25,6 +25,7 @@ v.var[1,1] = 1
 
 @test v[1,1] ≈ scale_factor * v.var[1,1] + add_offset
 @test ismissing(v[2,2])
+@test v.attrib["_FillValue"] == fill_value
 @test fillvalue(v) == fill_value
 
 @test collect(CDM.dimnames(v)) == ["lon","lat"]

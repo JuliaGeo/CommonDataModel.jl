@@ -1,4 +1,5 @@
 using Test
+using CommonDataModel: coord
 
 fname = tempname()
 #TDS = NCDataset
@@ -6,7 +7,7 @@ TDS = MemoryDataset
 
 for define_standard_name in [false,true]
 
-    NCDataset(fname,"c") do ds
+    TDS(fname,"c") do ds
         # Dimensions
 
         ds.dim["xi_rho"] = 6
@@ -67,7 +68,7 @@ for define_standard_name in [false,true]
     end
 
     local ds
-    ds = NCDataset(fname)
+    ds = TDS(fname)
     @test name(coord(ds["zeta"],"longitude")) == "lon_rho"
     @test name(coord(ds["ubar"],"longitude")) == "lon_u"
     @test coord(ds["ubar"],"foobar") == nothing
