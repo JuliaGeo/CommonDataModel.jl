@@ -16,7 +16,7 @@ import SomeDatasets # where SomeDatasets is either GRIBDatasets or NCDatasets
 ds = SomeDatasets.Dataset("file_name")
 
 # ntime is the number of time instances
-ntime = CDM.dims(ds)["time"]
+ntime = ds.dim["time"] # or CDM.dims(ds)["time"]
 
 # create an array-like structure v corresponding to variable temperature
 v = ds["temperature"]
@@ -28,7 +28,7 @@ subdata = v[10:30,30:5:end]
 data = v[:,:]
 
 # load a global attribute
-title = CDM.attribs(ds)["title"]
+title = ds.attrib["title"]  # or CDM.attribs(ds)["title"]
 close(ds)
 ```
 
@@ -48,5 +48,7 @@ using Downloads: download
 
 grib_file = download("https://github.com/JuliaGeo/GRIBDatasets.jl/raw/98356af026ea39a5ec0b5e64e4289105492321f8/test/sample-data/era5-levels-members.grib")
 netcdf_file = "test.nc"
-NCDatasets.write(netcdf_file,GRIBDataset(grib_file))
+NCDataset(netcdf_file,"c") do ds
+   NCDatasets.write(ds,GRIBDataset(grib_file))
+end
 ```
