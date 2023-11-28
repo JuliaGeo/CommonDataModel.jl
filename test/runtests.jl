@@ -21,6 +21,10 @@ end
     include("test_multifile.jl")
 end
 
+@testset "views" begin
+    include("test_subvariable.jl")
+end
+
 @testset "@select macro" begin
     include("test_select.jl")
     include("test_multifile_select.jl")

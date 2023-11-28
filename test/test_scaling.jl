@@ -45,6 +45,7 @@ for sample_data = ( -100:100,
                     )
 
     local io, data, fill_value, mv, md, add_offset, scale_factor
+    local data2
 
     fill_value = sample_data[1]
     data = rand(sample_data[2:end],3,4)
