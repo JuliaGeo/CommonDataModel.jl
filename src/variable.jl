@@ -35,6 +35,34 @@ function defVar(ds::AbstractDataset,name::SymbolOrString,type::DataType,
     error("unimplemented for abstract type")
 end
 
+"""
+    fillvalue(::Type{Int8})
+    fillvalue(::Type{UInt8})
+    fillvalue(::Type{Int16})
+    fillvalue(::Type{UInt16})
+    fillvalue(::Type{Int32})
+    fillvalue(::Type{UInt32})
+    fillvalue(::Type{Int64})
+    fillvalue(::Type{UInt64})
+    fillvalue(::Type{Float32})
+    fillvalue(::Type{Float64})
+    fillvalue(::Type{Char})
+    fillvalue(::Type{String})
+
+Default fill-value for the given type from NetCDF.
+"""
+@inline fillvalue(::Type{Int8})    = Int8(-127)
+@inline fillvalue(::Type{UInt8})   = UInt8(255)
+@inline fillvalue(::Type{Int16})   = Int16(-32767)
+@inline fillvalue(::Type{UInt16})  = UInt16(65535)
+@inline fillvalue(::Type{Int32})   = Int32(-2147483647)
+@inline fillvalue(::Type{UInt32})  = UInt32(4294967295)
+@inline fillvalue(::Type{Int64})   = Int64(-9223372036854775806)
+@inline fillvalue(::Type{UInt64})  = UInt64(18446744073709551614)
+@inline fillvalue(::Type{Float32}) = 9.9692099683868690e+36
+@inline fillvalue(::Type{Float64}) = 9.9692099683868690f+36
+@inline fillvalue(::Type{Char})    = '\0'
+@inline fillvalue(::Type{String})  = ""
 
 
 
