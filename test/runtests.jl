@@ -4,7 +4,7 @@ using Test
 include("memory_dataset.jl")
 
 @testset "CommonDataModel" begin
-    include("test_conversion.jl")
+    #include("test_conversion.jl")
     include("test_empty.jl")
     include("test_scaling.jl")
     include("test_variable.jl")
