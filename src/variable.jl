@@ -129,7 +129,7 @@ end
 
 function defVar(ds::AbstractDataset,name,data::T; kwargs...) where T <: Union{Number,String,Char}
     v = defVar(ds,name,T,(); kwargs...)
-    v[:] = data
+    v[] = data
     return v
 end
 
