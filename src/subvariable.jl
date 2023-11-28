@@ -181,7 +181,7 @@ end
 
 function chunking(v::SubVariable)
     storage, chunksizes = chunking(v.parent)
-    return storage, min.(chunksizes,collect(size(v)))
+    return storage, min.(chunksizes,size(v))
 end
 
 deflate(v::SubVariable) = deflate(v.parent)

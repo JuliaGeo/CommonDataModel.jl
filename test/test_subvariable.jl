@@ -1,6 +1,6 @@
 
 #import NCDatasets
-using CommonDataModel: subsub, SubDataset
+using CommonDataModel: subsub, SubDataset, SubVariable, chunking, deflate, path
 using DataStructures
 using Test
 
@@ -58,6 +58,7 @@ ncvar = defVar(ds,"bat", Float32, ("lon", "lat"), attrib = OrderedDict(
     "_FillValue"                => Float32(9.96921e36),
 ))
 
+ncscalar = defVar(ds,"scalar", 12, ())
 
 # Define variables
 
@@ -67,16 +68,36 @@ nclon[:] = 1:10
 nclat[:] = 1:11
 ncvar[:,:] = data
 
+ncvar_view = view(ncvar,1:3,1:4)
+@test parentindices(ncvar_view) == (1:3,1:4)
+ncvar_view.attrib["foo"] = "bar"
+@test ncvar_view.attrib["foo"] == "bar"
+@test ncvar.attrib["foo"] == "bar"
+@test SubVariable(ncvar)[:,:] == data
+@test ncscalar[] == 12
 
+@test collect(view(ds,lon=1:3)["scalar"])[1] == 12
 
 @test Array(view(ncvar,1:3,1:4)) == Array(view(data,1:3,1:4))
 
-list_indices = [(:,:),(1:3,2:3),(2,:),(2,2:3),(1:3:10,2:3)]
+@test ncvar_view[CartesianIndex(2,3)] == data[CartesianIndex(2,3)]
+@test ncvar_view[CartesianIndex(2),3] == data[2,3]
+
+
+@test chunking(ncvar_view)[1] == :contiguous
+@test chunking(ncvar_view)[2] == size(ncvar_view)
+@test deflate(ncvar_view) == deflate(ncvar)
+
+list_indices = [
+    (:,:),(1:3,2:3),(2,:),(2,2:3),
+    (1:3:10,2:3),
+    (CartesianIndex(1,2):CartesianIndex(2,3),)
+]
 
 for indices = list_indices
     local v
     local ncvar2
-    ncvar2 = ncvar[indices...]
+    ncvar2 = data[indices...]
     v = view(ncvar,indices...);
 
     @test size(v) == size(ncvar2)
