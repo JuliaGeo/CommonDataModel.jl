@@ -7,12 +7,18 @@ include("memory_dataset.jl")
     include("test_conversion.jl")
     include("test_empty.jl")
     include("test_scaling.jl")
+    include("test_variable.jl")
+end
+
+@testset "CF conventions" begin
+    include("test_cfconventions.jl")
+    include("test_coord.jl")
+    include("test_bounds.jl")
 end
 
 @testset "Multi-file" begin
     include("test_multifile.jl")
 end
-
 
 @testset "@select macro" begin
     include("test_select.jl")

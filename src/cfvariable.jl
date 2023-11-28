@@ -107,6 +107,7 @@ function cfvariable(ds,
     v = _v
     T = eltype(v)
 
+    @debug "parent variable" _parentname
 
     # sanity check
     if (T <: Number) && (

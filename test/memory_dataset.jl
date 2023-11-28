@@ -2,7 +2,7 @@ import Base: size, getindex, setindex!, checkbounds
 import CommonDataModel as CDM
 #import CommonDataModel: SymbolOrString
 using DataStructures
-import CommonDataModel: defVar, unlimited, name, dimnames, dataset, variable, dim, attribnames, attrib, defDim, defAttrib, MFDataset, iswritable, SymbolOrString, parentdataset
+import CommonDataModel: defVar, unlimited, name, dimnames, dataset, variable, dim, attribnames, attrib, defDim, defAttrib, MFDataset, iswritable, SymbolOrString, parentdataset, load!
 
 mutable struct ResizableArray{T,N} <: AbstractArray{T,N}
     A::AbstractArray{T,N}
@@ -81,6 +81,8 @@ function grow_unlimited_dimension(ds,dname,len)
 end
 
 Base.getindex(v::MemoryVariable,ij...) = v.data[ij...]
+CDM.load!(v::MemoryVariable,buffer,ij...) = buffer .= view(v.data,ij...)
+
 function Base.setindex!(v::MemoryVariable,data,ij...)
     sz = size(v.data)
     v.data[ij...] = data
@@ -129,7 +131,10 @@ function CDM.dim(md::MemoryDataset,name::AbstractString)
     end
 end
 
+CDM.varnames(ds::MemoryDataset) = collect(keys(ds.variables))
+
 CDM.variable(ds::MemoryDataset,variablename::SymbolOrString) = ds.variables[String(variablename)]
+
 
 CDM.attribnames(md::Union{MemoryDataset,MemoryVariable}) = keys(md._attrib)
 CDM.attrib(md::Union{MemoryDataset,MemoryVariable},name::AbstractString) = md._attrib[name]
@@ -171,7 +176,7 @@ function CDM.defVar(md::MemoryDataset,name::AbstractString,T::DataType,dimnames;
         data = ResizableArray(data_,fv)
     end
     mv = MemoryVariable(md,name,(dimnames...,), data,
-                        convert(OrderedDict{String,Any},attrib))
+                        OrderedDict{String,Any}(collect(attrib)))
 
     if fillvalue !== nothing
         mv.attrib["_FillValue"] = fillvalue
@@ -196,13 +201,14 @@ end
 CDM.parentdataset(md::MemoryDataset) = md.parent_dataset
 CDM.iswritable(md::MemoryDataset) = true
 
-function MemoryDataset(; parent_dataset = nothing, name = "/")
+function MemoryDataset(; parent_dataset = nothing, name = "/",
+                       attrib = OrderedDict{String,Any}())
     return MemoryDataset(
         parent_dataset,
         name,
         OrderedDict{String,Int}(),
         OrderedDict{String,MemoryVariable}(),
-        OrderedDict{String,Any}(),
+        OrderedDict{String,Any}(attrib),
         String[],
         OrderedDict{String,Any}(),
     )
@@ -210,9 +216,9 @@ end
 
 const MEMORY_DATASET_STORE = Dict{String,Any}()
 
-function MemoryDataset(key,mode = "r")
+function MemoryDataset(key,mode = "r"; kwargs...)
     if mode == "c"
-        md = MemoryDataset();
+        md = MemoryDataset(; kwargs...);
         MEMORY_DATASET_STORE[key] = md
         return md
     elseif mode == "r" || mode == "a"
