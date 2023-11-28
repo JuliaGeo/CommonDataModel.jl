@@ -3,7 +3,7 @@ using Test
 import CommonDataModel as CDM
 using DataStructures
 using Dates
-import CommonDataModel: AbstractDataset, AbstractVariable, Attributes, Dimensions, CatArrays
+import CommonDataModel: AbstractDataset, AbstractVariable, Attributes, Dimensions, CatArrays, defGroup, sync
 
 function example_file(TDS,i,array, fname = tempname();
     varname = "var")
