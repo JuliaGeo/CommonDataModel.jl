@@ -163,19 +163,24 @@ end
 
 """
     v = CommonDataModel.defVar(ds::AbstractDataset,src::AbstractVariable)
+    v = CommonDataModel.defVar(ds::AbstractDataset,name::SymbolOrString,src::AbstractVariable)
 
 Defines and return the variable in the data set `ds`
-copied from the variable `src`. The variable name, dimension name, attributes
-and data are copied from `src`.
+copied from the variable `src`. The dimension name, attributes
+and data are copied from `src` as well as the variable name (unless provide by `name`).
 """
-function defVar(dest::AbstractDataset,srcvar::AbstractVariable; kwargs...)
-    v = defVar(dest,name(srcvar),
+function defVar(dest::AbstractDataset,name::SymbolOrString,srcvar::AbstractVariable; kwargs...)
+    v = defVar(dest,name,
                Array(srcvar),
                dimnames(srcvar),
                attrib=attribs(srcvar); kwargs...)
-
     return v
 end
+
+function defVar(dest::AbstractDataset,srcvar::AbstractVariable; kwargs...)
+    defVar(dest,name(srcvar),srcvar; kwargs...)
+end
+
 
 """
     ds = CommonDataModel.dataset(v::AbstractVariable)

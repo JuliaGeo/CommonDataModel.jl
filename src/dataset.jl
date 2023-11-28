@@ -161,6 +161,11 @@ function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
 end
 
 
+function Base.setindex!(ds::AbstractDataset,data::AbstractVariable,varname::SymbolOrString)
+    return defVar(ds, varname, data)
+end
+
+
 """
     varbyattrib(ds, attname = attval)
 

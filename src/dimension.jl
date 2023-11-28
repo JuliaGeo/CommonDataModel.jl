@@ -15,6 +15,18 @@ dimnames = keys(ds.dim)
 dimnames(ds::Union{AbstractDataset,AbstractVariable}) = ()
 
 
+function _dimnames_recursive(ds::AbstractDataset)
+    dn = collect(dimnames(ds))
+
+    pd = parentdataset(ds)
+    if pd !== nothing
+        append!(dn,_dimnames_recursive(pd))
+    end
+
+    return Tuple(dn)
+end
+
+
 """
     CommonDatamodel.dim(ds::AbstractDataset,dimname::SymbolOrString)
 
