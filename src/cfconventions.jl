@@ -63,7 +63,7 @@ function filter(ncv::AbstractVariable, indices...; accepted_status_flags = nothi
     if (accepted_status_flags != nothing)
         ncv_ancillary = ancillaryvariables(ncv,"status_flag");
         if ncv_ancillary == nothing
-            error("no variable with the attribute status_flag as standard_name among $(ancillary_variables) found")
+            error("no ancillary variable with the attribute status_flag related to $(name(ncv)) found")
         end
 
         flag_values = ncv_ancillary.attrib["flag_values"]
