@@ -3,7 +3,7 @@ using Test
 import CommonDataModel as CDM
 using DataStructures
 using Dates
-import CommonDataModel: AbstractDataset, AbstractVariable, Attributes, Dimensions, CatArrays, defGroup, sync
+import CommonDataModel: AbstractDataset, AbstractVariable, Attributes, Dimensions, CatArrays, defGroup, sync, chunking, deflate, checksum
 
 function example_file(TDS,i,array, fname = tempname();
     varname = "var")
@@ -190,6 +190,14 @@ end
 mfds = TDS(fnames,"a",deferopen = false);
 mfds[varname][2,2,:] = 1:length(fnames)
 mfds.attrib["history"] = "foo2"
+mfds.attrib["new"] = "attrib"
+@test TDS(fnames[2]).attrib["new"]  == "attrib"
+
+@test name(parentdataset(mfds.group["group"])) == "/"
+
+@test chunking(mfds[varname]) == (:contiguous, (2, 3, 3))
+@test deflate(mfds[varname]) == (false, false, 0)
+@test checksum(mfds[varname]) == :nochecksum
 
 @test_throws ArgumentError TDS(fnames,"not-a-mode")
 
