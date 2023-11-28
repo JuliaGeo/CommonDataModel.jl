@@ -57,10 +57,14 @@ end
 
 """
 Variable (with applied transformations following the CF convention)
+attrib can have different attributes as the parent variables
+(used in GRIBDatasets to map from grib attributes to CF attributes)
 """
-struct CFVariable{T,N,TV,TSA}  <: AbstractVariable{T, N}
+struct CFVariable{T,N,TV,TA,TSA}  <: AbstractVariable{T, N}
     # this var is generally a `Variable` type
     var::TV
+    # Dict-like object for all attributes
+    attrib::TA
     # a named tuple with fill value, scale factor, offset,...
     # immutable for type-stability
     _storage_attrib::TSA
