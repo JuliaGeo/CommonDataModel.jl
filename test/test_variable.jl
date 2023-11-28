@@ -118,7 +118,7 @@ TDS(filename,"c") do ds
     ncv = ds["foo"]
     data2 = zeros(eltype(ncv),size(ncv))
     buffer = zeros(eltype(ncv.var),size(ncv));
-    load!(ncv,data2,buffer,:,:)
+    load!(ncv,data2,buffer,:)
     @test isequal(data2,data)
 
 
