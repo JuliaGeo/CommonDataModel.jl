@@ -32,6 +32,7 @@ ds = NCDataset("file.nc")
 # setindex!(ds.attrib,...) here automatically calls defAttrib(ds,...)
 ds.attrib["title"] = "my amazing results";
 ```
+Variables can be accessed by directly indexing the `AbstractDataset`.
 
 Every struct deriving from `AbstractVariable` have the properties `dim`, and `attrib`.
 
