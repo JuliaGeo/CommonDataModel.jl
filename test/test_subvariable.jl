@@ -188,7 +188,10 @@ ncvar = defVar(ds,"bat", zeros(10,11), ("lon", "lat"), attrib = OrderedDict(
 ds_subset = view(ds, lon = 2:3, lat = 2:4)
 
 fname_slice = tempname()
-write(fname_slice,ds_subset)
+ds_slice = TDS(fname_slice,"c")
+write(ds_slice,ds_subset)
+close(ds_slice)
 
-@test isfile(fname_slice)
+@test TDS(fname_slice)["lon"][:] == 2:3
+
 close(ds)
