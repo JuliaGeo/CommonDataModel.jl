@@ -160,4 +160,6 @@ show(io,md.dim)
 str = String(take!(io))
 @test occursin("lon",str)
 
-#close(md)
+@test_logs (:warn, r".*analysis.*")    CDM.defVar(md,"data2",eltype(data),("lon","lat"), attrib = OrderedDict{String,Any}(    "units" => "days since analysis"));
+
+close(md)

@@ -133,7 +133,15 @@ function cfvariable(ds,
             time_origin,time_factor = CFTime.timeunits(units, calendar)
         catch err
             calendar = nothing
-            @warn(sprint(showerror,err))
+            @debug "time units parsing failed " err units calendar
+
+            message = (
+                "cannot parse time units `$units`",
+                (isnothing(calendar) ? "" : "  (calendar `$calendar`)"),
+                ": ",
+                sprint(showerror,err))
+
+            @warn(join(message))
         end
     end
 
