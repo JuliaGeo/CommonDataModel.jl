@@ -8,6 +8,7 @@ include("memory_dataset.jl")
     include("test_empty.jl")
     include("test_scaling.jl")
     include("test_variable.jl")
+    include("test_attrib.jl")
     include("test_copy.jl")
 end
 

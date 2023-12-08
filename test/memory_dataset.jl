@@ -2,7 +2,7 @@ import Base: size, getindex, setindex!, checkbounds
 import CommonDataModel as CDM
 #import CommonDataModel: SymbolOrString
 using DataStructures
-import CommonDataModel: defVar, unlimited, name, dimnames, dataset, variable, dim, attribnames, attrib, defDim, defAttrib, MFDataset, iswritable, SymbolOrString, parentdataset, load!
+import CommonDataModel: defVar, unlimited, name, dimnames, dataset, variable, dim, attribnames, attrib, defDim, defAttrib, delAttrib, MFDataset, iswritable, SymbolOrString, parentdataset, load!
 
 mutable struct ResizableArray{T,N} <: AbstractArray{T,N}
     A::AbstractArray{T,N}
@@ -101,7 +101,7 @@ CDM.dataset(v::MemoryVariable) = v.parent_dataset
 
 Base.keys(md::MemoryDataset) = keys(md.variables)
 Base.haskey(md::MemoryDataset,varname::SymbolOrString) = haskey(md.variables,String(varname))
-CDM.variable(md::MemoryDataset,varname::AbstractString) = md.variables[varname]
+CDM.variable(md::MemoryDataset,varname::SymbolOrString) = md.variables[String(varname)]
 CDM.dimnames(md::MemoryDataset) = keys(md.dimensions)
 
 
@@ -113,16 +113,16 @@ function CDM.unlimited(md::MemoryDataset)
     return ul
 end
 
-function _dim(md::MemoryDataset,name::AbstractString)
-    if haskey(md.dimensions,name)
-        return md.dimensions[name]
+function _dim(md::MemoryDataset,name::SymbolOrString)
+    if haskey(md.dimensions,String(name))
+        return md.dimensions[String(name)]
     elseif md.parent_dataset !== nothing
         return _dim(md.parent_dataset,name)
     end
     return nothing
 end
 
-function CDM.dim(md::MemoryDataset,name::AbstractString)
+function CDM.dim(md::MemoryDataset,name::SymbolOrString)
     len = _dim(md,name)
     if !isnothing(len)
         return len
@@ -137,25 +137,24 @@ CDM.variable(ds::MemoryDataset,variablename::SymbolOrString) = ds.variables[Stri
 
 
 CDM.attribnames(md::Union{MemoryDataset,MemoryVariable}) = keys(md._attrib)
-CDM.attrib(md::Union{MemoryDataset,MemoryVariable},name::AbstractString) = md._attrib[name]
+CDM.attrib(md::Union{MemoryDataset,MemoryVariable},name::SymbolOrString) = md._attrib[String(name)]
 
 
 CDM.groupnames(md::MemoryDataset) = keys(md._group)
-CDM.group(md::MemoryDataset,name::AbstractString) = md._group[name]
+CDM.group(md::MemoryDataset,name::SymbolOrString) = md._group[String(name)]
 
-function CDM.defDim(md::MemoryDataset,name::AbstractString,len)
+function CDM.defDim(md::MemoryDataset,name::SymbolOrString,len)
     if isinf(len)
-#        @warn "unlimited dimensions are not supported yet"
-        md.dimensions[name] = 0
-        push!(md.unlimited,name)
+        md.dimensions[String(name)] = 0
+        push!(md.unlimited,String(name))
     else
-        md.dimensions[name] = len
+        md.dimensions[String(name)] = len
     end
 end
 
-function CDM.defVar(md::MemoryDataset,name::AbstractString,T::DataType,dimnames;
+function CDM.defVar(md::MemoryDataset,name::SymbolOrString,T::DataType,dimnames;
                     fillvalue = nothing,
-                    attrib = OrderedDict{String,Any}(),
+                    attrib = OrderedDict{SymbolOrString,Any}(),
                     )
 
     sz = ntuple(i -> CDM.dim(md,dimnames[i]),length(dimnames))
@@ -175,26 +174,33 @@ function CDM.defVar(md::MemoryDataset,name::AbstractString,T::DataType,dimnames;
         data_ = Array{T,length(dimnames)}(undef,sz...)
         data = ResizableArray(data_,fv)
     end
-    mv = MemoryVariable(md,name,(dimnames...,), data,
-                        OrderedDict{String,Any}(collect(attrib)))
+
+    attrib_ = OrderedDict{String,Any}()
+    for (k,v) in attrib
+        attrib_[String(k)] = v
+    end
+    mv = MemoryVariable(md,String(name),(String.(dimnames)...,), data, attrib_)
 
     if fillvalue !== nothing
         mv.attrib["_FillValue"] = fillvalue
     end
-    md.variables[name] = mv
+    md.variables[String(name)] = mv
 
-    cfvar = md[name]
+    cfvar = md[String(name)]
 
     return cfvar
 end
 
-function CDM.defAttrib(md::Union{MemoryVariable,MemoryDataset},name::AbstractString,data);
-    md._attrib[name] = data
+function CDM.defAttrib(md::Union{MemoryVariable,MemoryDataset},name::SymbolOrString,data)
+    md._attrib[String(name)] = data
 end
 
+function CDM.delAttrib(md::Union{MemoryVariable,MemoryDataset},name::SymbolOrString)
+    delete!(md._attrib,String(name))
+end
 
-function CDM.defGroup(md::MemoryDataset,name::AbstractString);
-    md._group[name] = MemoryDataset(; parent_dataset = md, name = name)
+function CDM.defGroup(md::MemoryDataset,name::SymbolOrString);
+    md._group[String(name)] = MemoryDataset(; parent_dataset = md, name = name)
 end
 
 

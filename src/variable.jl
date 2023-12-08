@@ -97,6 +97,10 @@ function defVar(ds::AbstractDataset,name::SymbolOrString,data,dimnames; kwargs..
     _defVar(ds,name,data,nctype,dimnames; kwargs...)
 end
 
+
+as_dict(x::NamedTuple) = OrderedDict(zip(keys(x),values(x)))
+as_dict(x) = OrderedDict(x)
+
 function _defVar(ds::AbstractDataset,name::SymbolOrString,data,nctype,vardimnames; attrib = [], kwargs...)
     # define the dimensions if necessary
     for (i,dimname) in enumerate(String.(vardimnames))
@@ -116,7 +120,7 @@ function _defVar(ds::AbstractDataset,name::SymbolOrString,data,nctype,vardimname
     T = eltype(data)
     # we should preserve the order
     # value type is promoted to Any as we add values of different type
-    attrib = convert(OrderedDict{String,Any},OrderedDict(attrib))
+    attrib = convert(OrderedDict{SymbolOrString,Any},as_dict(attrib))
 
     if T <: Union{TimeType,Missing}
         if !haskey(attrib,"units")
