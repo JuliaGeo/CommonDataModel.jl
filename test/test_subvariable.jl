@@ -1,6 +1,6 @@
 
 #import NCDatasets
-using CommonDataModel: subsub, SubDataset, SubVariable, chunking, deflate, path
+using CommonDataModel: subsub, SubDataset, SubVariable, chunking, deflate, path, @select
 using DataStructures
 using Test
 
