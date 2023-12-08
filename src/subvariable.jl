@@ -175,7 +175,7 @@ groupname(ds::SubDataset) = groupname(ds.ds)
 
 
 function dataset(v::SubVariable)
-    indices = (;((Symbol(d),i) for (d,i) in zip(dimnames(v),v.indices))...)
+    indices = (;((Symbol(d),i) for (d,i) in zip(dimnames(v.parent),v.indices))...)
     return SubDataset(dataset(v.parent),indices)
 end
 

@@ -111,7 +111,6 @@ defVar(ds,:temperature2,data,(:lon,:lat),
        attrib = OrderedDict(:long_name => "Temperature",
                  :test_vector_attrib => [1,2,3]))
 
-
 defVar(ds,:temperature3,data,(:lon,:lat),
        attrib = Dict(:long_name => "Temperature",
                  :test_vector_attrib => [1,2,3]))

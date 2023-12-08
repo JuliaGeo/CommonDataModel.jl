@@ -195,3 +195,22 @@ close(ds_slice)
 @test TDS(fname_slice)["lon"][:] == 2:3
 
 close(ds)
+
+
+
+#
+
+fname = tempname()
+ds = TDS(fname,"c")
+
+nclon = defVar(ds,"lon", 1:7, ("lon",))
+nclat = defVar(ds,"lat", 1:10, ("lat",))
+nctime = defVar(ds,"time", [DateTime(2000,1,1)], ("time",))
+ncsst = defVar(ds,"sst", ones(7,10,1), ("lon", "lat", "time"))
+
+ncsst3 = @select(ncsst,lon ≈ 2 && lat ≈ 3)
+
+ss = ncsst3["time"]
+@test ss[1] == DateTime(2000,1,1)
+
+close(ds)
