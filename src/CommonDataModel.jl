@@ -1,11 +1,28 @@
 module CommonDataModel
 
+using Base.Broadcast: Broadcasted, BroadcastStyle
 using CFTime
 using Dates
 using Printf
 using Preferences
-import Base: isopen, show, display, close, filter, collect, write
 using DataStructures
+import Base:
+    close,
+    collect,
+    display,
+    filter,
+    getindex,
+    isopen,
+    iterate,
+    ndims,
+    reduce,
+    show,
+    size,
+    sum,
+    write
+import Statistics
+import Statistics: mean, var, std, median
+
 
 
 include("CatArrays.jl")
@@ -20,6 +37,7 @@ include("multifile.jl")
 include("defer.jl")
 include("subvariable.jl")
 include("select.jl")
+include("groupby.jl")
 
 end # module CommonDataModel
 

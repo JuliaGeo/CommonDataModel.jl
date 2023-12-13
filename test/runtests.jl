@@ -30,3 +30,7 @@ end
     include("test_select.jl")
     include("test_multifile_select.jl")
 end
+
+@testset "groupby" begin
+    include("test_groupby.jl")
+end
