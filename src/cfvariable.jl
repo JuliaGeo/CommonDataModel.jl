@@ -29,8 +29,6 @@ dim(v::CFVariable,name::SymbolOrString) = dim(v.var,name)
 # necessary for IJulia if showing a variable from a closed file
 Base.show(io::IO,::MIME"text/plain",v::AbstractVariable) = show(io,v)
 
-Base.display(v::AbstractVariable) = show(stdout,v)
-
 
 """
     v = cfvariable(ds::NCDataset,varname::SymbolOrString; <attrib> = <value>)
