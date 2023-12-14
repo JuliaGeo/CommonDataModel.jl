@@ -353,13 +353,13 @@ _dim_after_getindex(dim,ind::Union{Colon,AbstractRange,AbstractVector},other...)
 _dim_after_getindex(dim,ind::Integer,other...) = _dim_after_getindex(dim,other...)
 _dim_after_getindex(dim) = dim
 
-
-function Base.getindex(gr::GroupedVariableResult,indices...)
+function Base.getindex(gr::GroupedVariableResult{T},indices::Union{Integer,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...) where T
     gv = gr.gv
-    # after indexing some dimensions are not longer present
+    sz = size_getindex(gr,indices...)
+    data_by_class = Array{T}(undef,sz)
 
+    # after indexing some dimensions are not longer present
     cdim = _dim_after_getindex(0,indices[1:(gv.dim-1)]...) + 1
-    catdim(x,y) = cat(x,y,dims=cdim)
 
     indices_source = ntuple(ndims(gr)) do i
         if i == gv.dim
@@ -369,14 +369,13 @@ function Base.getindex(gr::GroupedVariableResult,indices...)
         end
     end
 
-    if indices[gv.dim] isa Integer
-        # single slice
-        data = gv[indices[gv.dim]]
-        return gr.reduce_fun(gv.map_fun(data[indices_source...]),dims=cdim)
-    else
-        slices = ( gr.reduce_fun(gv.map_fun(data[indices_source...]),dims=cdim) for data in gv[indices[gv.dim]] );
-        return reduce(catdim,slices);
+    for (kl,ku) in enumerate(to_indices(gr,indices)[gv.dim])
+        dest_ind = _dest_indices(gv.dim,kl,indices)
+        data = gv[ku]
+        data_by_class[dest_ind...] = gr.reduce_fun(gv.map_fun(data[indices_source...]),dims=cdim)
     end
+
+    return data_by_class
 end
 
 macro groupby(vsym,expression)
