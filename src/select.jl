@@ -19,9 +19,13 @@ function _findfirst(n::Near,v::AbstractVector)
 end
 
 function scan_exp!(exp::Symbol,found)
-    newsym = gensym()
-    push!(found,exp => newsym)
-    return newsym
+    if haskey(found,exp)
+        return found[exp]
+    else
+        newsym = gensym()
+        found[exp] = newsym
+        return newsym
+    end
 end
 
 function scan_exp!(exp::Expr,found)
@@ -53,7 +57,7 @@ end
 scan_exp!(exp,found) = exp
 
 function scan_exp(exp::Expr)
-    found = Pair{Symbol,Symbol}[]
+    found = Dict{Symbol,Symbol}()
     exp = scan_exp!(exp,found)
     return found,exp
 end
@@ -64,7 +68,7 @@ function scan_coordinate_name(exp)
     if length(params) != 1
         error("Multiple (or none) coordinates in expression $exp ($params) while looking for $(coordinate_names).")
     end
-    param = params[1]
+    param = first(params)
     return param,exp
 end
 
