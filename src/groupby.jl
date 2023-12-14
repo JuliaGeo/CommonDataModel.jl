@@ -25,7 +25,7 @@ end
 
 # reduce_fun is e.g. sum, mean, var,...
 # map_fun is the mapping function applied before reduction
-struct GroupedVariableResult{T,N,TGV,TF}  <: AbstractVariable{T,N}
+struct ReducedGroupedVariable{T,N,TGV,TF}  <: AbstractVariable{T,N}
     gv::TGV
     reduce_fun::TF
 end
@@ -73,7 +73,7 @@ function variable(gds::GroupedDataset,varname::SymbolOrString)
             gds.unique_class,
             dim,
             gds.map_fun)
-        return GroupedVariableResult(gv,gds.reduce_fun)
+        return ReducedGroupedVariable(gv,gds.reduce_fun)
     end
 end
 
@@ -276,46 +276,46 @@ end
 
 group(gv::GroupedVariable,k) = gv.unique_class[k]
 
-function GroupedVariableResult(gv::GroupedVariable,reduce_fun)
+function ReducedGroupedVariable(gv::GroupedVariable,reduce_fun)
     T = eltype(gv.v)
     N = ndims(gv.v)
-    GroupedVariableResult{T,N,typeof(gv),typeof(reduce_fun)}(gv,reduce_fun)
+    ReducedGroupedVariable{T,N,typeof(gv),typeof(reduce_fun)}(gv,reduce_fun)
 end
 
 
-Base.sum(gv::GroupedVariable) = GroupedVariableResult(gv,sum)
-Statistics.mean(gv::GroupedVariable) = GroupedVariableResult(gv,mean)
-Statistics.median(gv::GroupedVariable) = GroupedVariableResult(gv,median)
-Statistics.std(gv::GroupedVariable) = GroupedVariableResult(gv,std)
-Statistics.var(gv::GroupedVariable) = GroupedVariableResult(gv,var)
+Base.sum(gv::GroupedVariable) = ReducedGroupedVariable(gv,sum)
+Statistics.mean(gv::GroupedVariable) = ReducedGroupedVariable(gv,mean)
+Statistics.median(gv::GroupedVariable) = ReducedGroupedVariable(gv,median)
+Statistics.std(gv::GroupedVariable) = ReducedGroupedVariable(gv,std)
+Statistics.var(gv::GroupedVariable) = ReducedGroupedVariable(gv,var)
 
 
-# methods with GroupedVariableResult as main argument
+# methods with ReducedGroupedVariable as main argument
 
-function Base.show(io::IO,::MIME"text/plain",gv::GroupedVariableResult)
+function Base.show(io::IO,::MIME"text/plain",gv::ReducedGroupedVariable)
     println(
         io,join(string.(size(gv)),'×')," array after reducing using ",
         "$(gv.reduce_fun)")
 end
 
-Base.ndims(gr::GroupedVariableResult) = ndims(gr.gv.v)
-Base.size(gr::GroupedVariableResult) = ntuple(ndims(gr)) do i
+Base.ndims(gr::ReducedGroupedVariable) = ndims(gr.gv.v)
+Base.size(gr::ReducedGroupedVariable) = ntuple(ndims(gr)) do i
     if i == gr.gv.dim
         length(gr.gv.unique_class)
     else
         size(gr.gv.v,i)
     end
 end
-dimnames(gr::GroupedVariableResult) = dimnames(gr.gv.v)
-name(gr::GroupedVariableResult) = name(gr.gv.v)
+dimnames(gr::ReducedGroupedVariable) = dimnames(gr.gv.v)
+name(gr::ReducedGroupedVariable) = name(gr.gv.v)
 
-struct GroupedVariableResultStyle <: BroadcastStyle end
-Base.BroadcastStyle(::Type{<:GroupedVariableResult}) = GroupedVariableResultStyle()
+struct ReducedGroupedVariableStyle <: BroadcastStyle end
+Base.BroadcastStyle(::Type{<:ReducedGroupedVariable}) = ReducedGroupedVariableStyle()
 
 
-function Base.similar(bc::Broadcasted{GroupedVariableResultStyle}, ::Type{ElType})  where ElType
-    # Scan the inputs for the GroupedVariableResult:
-    A = find_gv(GroupedVariableResult,bc)
+function Base.similar(bc::Broadcasted{ReducedGroupedVariableStyle}, ::Type{ElType})  where ElType
+    # Scan the inputs for the ReducedGroupedVariable:
+    A = find_gv(ReducedGroupedVariable,bc)
     return similar(A.gv.v)
 end
 
@@ -336,11 +336,11 @@ function _array_selectdim(B,dim,i)
 end
 
 
-_broadcasted_array_selectdim(A::GroupedVariableResult,dim,indices,k) = _array_selectdim(A,dim,k:k)
+_broadcasted_array_selectdim(A::ReducedGroupedVariable,dim,indices,k) = _array_selectdim(A,dim,k:k)
 _broadcasted_array_selectdim(A,dim,indices,k) = _array_selectdim(A,dim,indices)
 
 function broadcasted_gvr!(C,f,A,B)
-    gr = find_gv(GroupedVariableResult,(A,B))
+    gr = find_gv(ReducedGroupedVariable,(A,B))
     gv = gr.gv
     dim = gr.gv.dim
 
@@ -360,24 +360,24 @@ function broadcasted_gvr!(C,f,A,B)
 end
 
 
-Base.broadcasted(f,A,B::GroupedVariableResult) = broadcasted_gvr!(similar(A),f,A,B)
-Base.broadcasted(f,A::GroupedVariableResult,B) = broadcasted_gvr!(similar(B),f,A,B)
+Base.broadcasted(f,A,B::ReducedGroupedVariable) = broadcasted_gvr!(similar(A),f,A,B)
+Base.broadcasted(f,A::ReducedGroupedVariable,B) = broadcasted_gvr!(similar(B),f,A,B)
 
 _array_selectdim(x) = Array(selectdim(x,1,[1]))
 
 
 
 
-function Base.Array(gr::GroupedVariableResult)
+function Base.Array(gr::ReducedGroupedVariable)
     gr[ntuple(i -> Colon(),ndims(gr))...]
 end
 
-function Base.getindex(gr::GroupedVariableResult{T,N,TGV,typeof(sum)},indices::Union{Integer,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...) where {T,N,TGV}
+function Base.getindex(gr::ReducedGroupedVariable{T,N,TGV,typeof(sum)},indices::Union{Integer,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...) where {T,N,TGV}
     data,count = _mapreduce(gr.gv.map_fun,+,gr.gv,indices)
     data
 end
 
-function Base.getindex(gr::GroupedVariableResult{T,N,TGV,typeof(mean)},indices::Union{Integer,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...) where {T,N,TGV}
+function Base.getindex(gr::ReducedGroupedVariable{T,N,TGV,typeof(mean)},indices::Union{Integer,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...) where {T,N,TGV}
     data,count = _mapreduce(gr.gv.map_fun,+,gr.gv,indices)
     data ./ count
 end
@@ -386,7 +386,7 @@ _dim_after_getindex(dim,ind::Union{Colon,AbstractRange,AbstractVector},other...)
 _dim_after_getindex(dim,ind::Integer,other...) = _dim_after_getindex(dim,other...)
 _dim_after_getindex(dim) = dim
 
-function Base.getindex(gr::GroupedVariableResult{T},indices::Union{Integer,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...) where T
+function Base.getindex(gr::ReducedGroupedVariable{T},indices::Union{Integer,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...) where T
     gv = gr.gv
     sz = size_getindex(gr,indices...)
     data_by_class = Array{T}(undef,sz)
@@ -418,7 +418,7 @@ macro groupby(vsym,expression)
 end
 
 
-function dataset(gr::GroupedVariableResult)
+function dataset(gr::ReducedGroupedVariable)
     gv = gr.gv
     ds = dataset(gv.v)
 

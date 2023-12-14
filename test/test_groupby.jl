@@ -7,7 +7,7 @@ using CommonDataModel
 using CommonDataModel:
     @groupby,
     GroupedVariable,
-    GroupedVariableResult,
+    ReducedGroupedVariable,
     _array_selectdim_indices,
     _dest_indices,
     _dim_after_getindex,
@@ -114,7 +114,7 @@ gr = month_sum
 f = gr.reduce_fun
 
 mysum(x; dims=nothing) = sum(x,dims=dims)
-mysum(gv::GroupedVariable) = GroupedVariableResult(gv,mysum)
+mysum(gv::GroupedVariable) = ReducedGroupedVariable(gv,mysum)
 
 gd = groupby(ds[:data],:time => Dates.Month);
 month_sum = mysum(gd);
