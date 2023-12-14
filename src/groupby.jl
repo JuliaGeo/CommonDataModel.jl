@@ -1,3 +1,36 @@
+#
+# types
+#
+
+struct GroupedDataset{TDS,TF,TClass,TM,TRF} <: AbstractDataset
+    ds::TDS # dataset
+    coordname::Symbol
+    group_fun::TF # mapping function
+    class::Vector{TClass}
+    unique_class::Vector{TClass}
+    map_fun::TM
+    reduce_fun::TRF
+end
+
+struct GroupedVariable{TV,TF,TClass,TM,TG} <: AbstractVector{TG} where TV <: AbstractArray{T,N} where {T,N}
+    v::TV # dataset
+    coordname::Symbol
+    # mapping function to create groups when applied to coordinate
+    group_fun::TF
+    class::Vector{TClass}
+    unique_class::Vector{TClass}
+    dim::Int
+    map_fun::TM
+end
+
+# reduce_fun is e.g. sum, mean, var,...
+# map_fun is the mapping function applied before reduction
+struct GroupedVariableResult{T,N,TGV,TF}  <: AbstractVariable{T,N}
+    gv::TGV
+    reduce_fun::TF
+end
+
+# helper function
 
 _indices_helper(j,ku,i,val) = ()
 _indices_helper(j,ku,i,val,ind1::Integer,indices...) = _indices_helper(j,ku,i+1,val,indices...)
@@ -19,25 +52,34 @@ _dest_indices(j,ku,indices) = _indices_helper(j,ku,1,:,indices...)
 @inline _size_getindex(array,sh,n,i,         indexes...) = _size_getindex(array,(sh...,length(i)),    n+1,indexes...)
 @inline _size_getindex(array,sh,n) = sh
 
-struct GroupedDataset{TDS,TF,TClass,TM,TRF} <: AbstractDataset
-    ds::TDS # dataset
-    coordname::Symbol
-    group_fun::TF # mapping function
-    class::Vector{TClass}
-    unique_class::Vector{TClass}
-    map_fun::TM
-    reduce_fun::TRF
+#
+# methods with GroupedDataset as main argument
+#
+
+Base.keys(gds::GroupedDataset) = keys(gds.ds)
+
+function variable(gds::GroupedDataset,varname::SymbolOrString)
+    v = variable(gds.ds,varname)
+
+    dim = findfirst(==(gds.coordname),Symbol.(dimnames(v)))
+    if isnothing(dim)
+        return v
+    else
+        gv = GroupedVariable(
+            v,
+            gds.coordname,
+            gds.group_fun,
+            gds.class,
+            gds.unique_class,
+            dim,
+            gds.map_fun)
+        return GroupedVariableResult(gv,gds.reduce_fun)
+    end
 end
 
-struct GroupedVariable{TV,TF,TClass,TM,TG} <: AbstractVector{TG} where TV <: AbstractArray{T,N} where {T,N}
-    v::TV # dataset
-    coordname::Symbol
-    group_fun::TF # mapping function
-    class::Vector{TClass}
-    unique_class::Vector{TClass}
-    dim::Int
-    map_fun::TM
-end
+#
+# methods with GroupedVariable as main argument
+#
 
 function Base.show(io::IO,::MIME"text/plain",gv::GroupedVariable)
     println(io,length(gv),"-element ",
@@ -51,20 +93,6 @@ function Base.show(io::IO,::MIME"text/plain",gv::GroupedVariable)
 end
 
 Base.show(io::IO,gv::GroupedVariable) = Base.show(io,MIME"text/plain",gv)
-
-# reduce_fun is e.g. sum, mean, var,...
-# map_fun is the mapping function applied before reduction
-struct GroupedVariableResult{T,N,TGV,TF}  <: AbstractVariable{T,N}
-    gv::TGV
-    reduce_fun::TF
-end
-
-function Base.show(io::IO,::MIME"text/plain",gv::GroupedVariableResult)
-    println(
-        io,join(string.(size(gv)),'×')," array after reducing using ",
-        "$(gv.reduce_fun)")
-end
-
 Base.ndims(gv::GroupedVariable) = 1
 Base.size(gv::GroupedVariable) = (length(gv.unique_class),)
 Base.eltype(gv::GroupedVariable{TV,TF,TClass,TM,TG}) where {TV,TF,TClass,TM,TG} = TG
@@ -79,7 +107,6 @@ function Base.getindex(gv::GroupedVariable,k::Integer)
     class_k,indices = group(gv,k)
     return gv.map_fun(Array(selectdim(gv.v,gv.dim,indices)))
 end
-
 
 # Types like Dates.Month behave different than normal scalars, e.g.
 # julia> length(Dates.Month(1))
@@ -128,24 +155,8 @@ function _reduce(args...; kwargs...)
     _mapreduce(identity,args...; kwargs...)
 end
 
-Base.ndims(gr::GroupedVariableResult) = ndims(gr.gv.v)
-Base.size(gr::GroupedVariableResult) = ntuple(ndims(gr)) do i
-    if i == gr.gv.dim
-        length(gr.gv.unique_class)
-    else
-        size(gr.gv.v,i)
-    end
-end
-dimnames(gr::GroupedVariableResult) = dimnames(gr.gv.v)
-name(gr::GroupedVariableResult) = name(gr.gv.v)
-
 struct GroupedVariableStyle <: BroadcastStyle end
-struct GroupedVariableResultStyle <: BroadcastStyle end
-
-
 Base.BroadcastStyle(::Type{<:GroupedVariable}) = GroupedVariableStyle()
-Base.BroadcastStyle(::Type{<:GroupedVariableResult}) = GroupedVariableResultStyle()
-
 
 """
     A = find_gv(T,As)
@@ -164,14 +175,6 @@ function Base.similar(bc::Broadcasted{GroupedVariableStyle}, ::Type{ElType})  wh
     return A
 end
 
-
-function Base.similar(bc::Broadcasted{GroupedVariableResultStyle}, ::Type{ElType})  where ElType
-    # Scan the inputs for the GroupedVariableResult:
-    A = find_gv(GroupedVariableResult,bc)
-    return similar(A.gv.v)
-end
-
-
 function Base.broadcasted(f,A::GroupedVariable{TV,TF,TClass,TM,TG}) where {TV,TF,TClass,TM,TG}
     # TODO change output TG
 
@@ -187,51 +190,6 @@ function Base.broadcasted(f,A::GroupedVariable{TV,TF,TClass,TM,TG}) where {TV,TF
         A.v,A.coordname,A.group_fun,A.class,A.unique_class,A.dim,map_fun)
 end
 
-# _array_selectdim_indices(ind,dim,i,sz...)
-# returns a tuple (:,:,:,i,:,:,:) where the i is at the dim position
-# in total there are as many indices as elements in the tuple sz
-# (typically the size of the array)
-
-_array_selectdim_indices(ind,dim,i,sz1,rest...) = _array_selectdim_indices((ind...,(length(ind) == dim-1 ? i : (:))),dim,i,rest...)
-_array_selectdim_indices(ind,dim,i) = ind
-
-
-# indices_B is not type-stable as dim is not know at compile type
-# but if i is a range (e.g. 1:2), then the type-unstability does not propagate
-function _array_selectdim(B,dim,i)
-    indices_B = _array_selectdim_indices((),dim,i,size(B)...)
-    return B[indices_B...]
-end
-
-
-_broadcasted_array_selectdim(A::GroupedVariableResult,dim,indices,k) = _array_selectdim(A,dim,k:k)
-_broadcasted_array_selectdim(A,dim,indices,k) = _array_selectdim(A,dim,indices)
-
-function broadcasted_gvr!(C,f,A,B)
-    gr = find_gv(GroupedVariableResult,(A,B))
-    gv = gr.gv
-    dim = gr.gv.dim
-
-    unique_class = gv.unique_class
-    class = gv.class
-
-    for k = 1:length(unique_class)
-        class_k, indices = group(gv,k)
-
-        selectdim(C,dim,indices) .= broadcast(
-            f,
-            _broadcasted_array_selectdim(A,dim,indices,k),
-            _broadcasted_array_selectdim(B,dim,indices,k))
-    end
-
-    return C
-end
-
-
-Base.broadcasted(f,A,B::GroupedVariableResult) = broadcasted_gvr!(similar(A),f,A,B)
-Base.broadcasted(f,A::GroupedVariableResult,B) = broadcasted_gvr!(similar(B),f,A,B)
-
-_array_selectdim(x) = Array(selectdim(x,1,[1]))
 
 
 function GroupedVariable(v::TV,coordname,group_fun::TF,class,unique_class,dim,map_fun::TM) where TV <: AbstractVariable where {TF,TM}
@@ -306,7 +264,7 @@ close(ds)
 
 
 """
-function groupby(v::TV,(coordname,group_fun)::Pair{<:SymbolOrString,TF}) where TV <: AbstractVariable where TF
+function groupby(v::AbstractVariable,(coordname,group_fun)::Pair{<:SymbolOrString,TF}) where TF
     # for NCDatasets 0.12
     c = v[String(coordname)][:]
     class = group_fun.(c)
@@ -316,12 +274,9 @@ function groupby(v::TV,(coordname,group_fun)::Pair{<:SymbolOrString,TF}) where T
     return GroupedVariable(v,coordname,group_fun,class,unique_class,dim,map_fun)
 end
 
-
 group(gv::GroupedVariable,k) = gv.unique_class[k]
 
-#GroupedVariableResult(gv,reduce_fun) = GroupedVariableResult(gv,reduce_fun,identity)
-
-function GroupedVariableResult(gv,reduce_fun)
+function GroupedVariableResult(gv::GroupedVariable,reduce_fun)
     T = eltype(gv.v)
     N = ndims(gv.v)
     GroupedVariableResult{T,N,typeof(gv),typeof(reduce_fun)}(gv,reduce_fun)
@@ -333,6 +288,84 @@ Statistics.mean(gv::GroupedVariable) = GroupedVariableResult(gv,mean)
 Statistics.median(gv::GroupedVariable) = GroupedVariableResult(gv,median)
 Statistics.std(gv::GroupedVariable) = GroupedVariableResult(gv,std)
 Statistics.var(gv::GroupedVariable) = GroupedVariableResult(gv,var)
+
+
+# methods with GroupedVariableResult as main argument
+
+function Base.show(io::IO,::MIME"text/plain",gv::GroupedVariableResult)
+    println(
+        io,join(string.(size(gv)),'×')," array after reducing using ",
+        "$(gv.reduce_fun)")
+end
+
+Base.ndims(gr::GroupedVariableResult) = ndims(gr.gv.v)
+Base.size(gr::GroupedVariableResult) = ntuple(ndims(gr)) do i
+    if i == gr.gv.dim
+        length(gr.gv.unique_class)
+    else
+        size(gr.gv.v,i)
+    end
+end
+dimnames(gr::GroupedVariableResult) = dimnames(gr.gv.v)
+name(gr::GroupedVariableResult) = name(gr.gv.v)
+
+struct GroupedVariableResultStyle <: BroadcastStyle end
+Base.BroadcastStyle(::Type{<:GroupedVariableResult}) = GroupedVariableResultStyle()
+
+
+function Base.similar(bc::Broadcasted{GroupedVariableResultStyle}, ::Type{ElType})  where ElType
+    # Scan the inputs for the GroupedVariableResult:
+    A = find_gv(GroupedVariableResult,bc)
+    return similar(A.gv.v)
+end
+
+# _array_selectdim_indices(ind,dim,i,sz...)
+# returns a tuple (:,:,:,i,:,:,:) where the i is at the dim position
+# in total there are as many indices as elements in the tuple sz
+# (typically the size of the array)
+
+_array_selectdim_indices(ind,dim,i,sz1,rest...) = _array_selectdim_indices((ind...,(length(ind) == dim-1 ? i : (:))),dim,i,rest...)
+_array_selectdim_indices(ind,dim,i) = ind
+
+
+# indices_B is not type-stable as dim is not know at compile type
+# but if i is a range (e.g. 1:2), then the type-unstability does not propagate
+function _array_selectdim(B,dim,i)
+    indices_B = _array_selectdim_indices((),dim,i,size(B)...)
+    return B[indices_B...]
+end
+
+
+_broadcasted_array_selectdim(A::GroupedVariableResult,dim,indices,k) = _array_selectdim(A,dim,k:k)
+_broadcasted_array_selectdim(A,dim,indices,k) = _array_selectdim(A,dim,indices)
+
+function broadcasted_gvr!(C,f,A,B)
+    gr = find_gv(GroupedVariableResult,(A,B))
+    gv = gr.gv
+    dim = gr.gv.dim
+
+    unique_class = gv.unique_class
+    class = gv.class
+
+    for k = 1:length(unique_class)
+        class_k, indices = group(gv,k)
+
+        selectdim(C,dim,indices) .= broadcast(
+            f,
+            _broadcasted_array_selectdim(A,dim,indices,k),
+            _broadcasted_array_selectdim(B,dim,indices,k))
+    end
+
+    return C
+end
+
+
+Base.broadcasted(f,A,B::GroupedVariableResult) = broadcasted_gvr!(similar(A),f,A,B)
+Base.broadcasted(f,A::GroupedVariableResult,B) = broadcasted_gvr!(similar(B),f,A,B)
+
+_array_selectdim(x) = Array(selectdim(x,1,[1]))
+
+
 
 
 function Base.Array(gr::GroupedVariableResult)
@@ -395,25 +428,4 @@ function dataset(gr::GroupedVariableResult)
         gv.map_fun,
         gr.reduce_fun,
     )
-end
-
-Base.keys(gds::GroupedDataset) = keys(gds.ds)
-
-function variable(gds::GroupedDataset,varname::SymbolOrString)
-    v = variable(gds.ds,varname)
-
-    dim = findfirst(==(gds.coordname),Symbol.(dimnames(v)))
-    if isnothing(dim)
-        return v
-    else
-        gv = GroupedVariable(
-            v,
-            gds.coordname,
-            gds.group_fun,
-            gds.class,
-            gds.unique_class,
-            dim,
-            gds.map_fun)
-        return GroupedVariableResult(gv,gds.reduce_fun)
-    end
 end
