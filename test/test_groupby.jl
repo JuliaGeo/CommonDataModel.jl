@@ -60,7 +60,7 @@ group_fun = time -> Dates.Month(time)
 
 v = ds[varname]
 
-for reduce_fun in (sum,mean,var,std,median)
+for reduce_fun in (sum,mean,var,std,median,maximum)
     local data_by_class
     data_by_class_ref = cat(
         [reduce_fun(v[:,:,findall(Dates.month.(ds[coordname][:]) .== m)],dims=3)
@@ -114,10 +114,13 @@ gr = month_sum
 f = gr.reduce_fun
 
 mysum(x; dims=nothing) = sum(x,dims=dims)
-mysum(gv::GroupedVariable) = ReducedGroupedVariable(gv,mysum)
+mysum(gv::GroupedVariable) = reduce(mysum,gv)
 
 gd = groupby(ds[:data],:time => Dates.Month);
 month_sum = mysum(gd);
+@test month_sum[:,:,:] == d_sum
+
+month_sum = reduce(mysum,gd);
 @test month_sum[:,:,:] == d_sum
 
 

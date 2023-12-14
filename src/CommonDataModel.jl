@@ -18,10 +18,17 @@ import Base:
     reduce,
     show,
     size,
-    sum,
     write
 import Statistics
-import Statistics: mean, var, std, median
+import Statistics:
+    maximum,
+    mean,
+    median,
+    minimum,
+    std,
+    sum,
+    var
+
 
 
 

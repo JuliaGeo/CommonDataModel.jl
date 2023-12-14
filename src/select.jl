@@ -5,7 +5,7 @@ struct Near{TTarget,TTolerance}
     tolerance::TTolerance
 end
 
-Near(target::Number) = Near(target,nothing)
+Near(target) = Near(target,nothing)
 
 
 function _findfirst(n::Near,v::AbstractVector)
@@ -129,6 +129,10 @@ Create a sample file with random data:
 
 ```julia
 using NCDatasets, Dates
+using CommonDataModel: @select
+# or
+# using NCDatasets: @select
+
 fname = "sample_file.nc"
 lon = -180:180
 lat = -90:90
@@ -143,20 +147,20 @@ defVar(ds,"SST",SST,("lon","lat","time"));
 
 
 # load by bounding box
-v = NCDatasets.@select(ds["SST"],30 <= lon <= 60 && 40 <= lat <= 90)
+v = @select(ds["SST"],30 <= lon <= 60 && 40 <= lat <= 80)
 
 # substitute a local variable in condition using \$
 lonr = (30,60) # longitude range
-latr = (40,90) # latitude range
+latr = (40,80) # latitude range
 
-v = NCDatasets.@select(ds["SST"],\$lonr[1] <= lon <= \$lonr[2] && \$latr[1] <= lat <= \$latr[2])
+v = @select(ds["SST"],\$lonr[1] <= lon <= \$lonr[2] && \$latr[1] <= lat <= \$latr[2])
 
 # You can also select based on `ClosedInterval`s from `IntervalSets.jl`.
-# Both 30..60 and 65 ± 25 construct `ClosedInterval`s, see their documentation for details.
+# Both 30..60 and 60 ± 20 construct `ClosedInterval`s, see their documentation for details.
 
 lon_interval = 30..60
-lat_interval = 65 ± 25
-v = NCDatasets.@select(ds["SST"], lon ∈ \$lon_interval && lat ∈ \$lat_interval)
+lat_interval = 60 ± 20
+v = @select(ds["SST"], lon ∈ \$lon_interval && lat ∈ \$lat_interval)
 
 # get the indices matching the select query
 (lon_indices,lat_indices,time_indices) = parentindices(v)
@@ -165,12 +169,12 @@ v = NCDatasets.@select(ds["SST"], lon ∈ \$lon_interval && lat ∈ \$lat_interv
 v_lon = v["lon"]
 
 # find the nearest time instance
-v = NCDatasets.@select(ds["SST"],time ≈ DateTime(2000,1,4))
+v = @select(ds["SST"],time ≈ DateTime(2000,1,4))
 
 # find the nearest time instance but not earlier or later than 2 hours
 # an empty array is returned if no time instance is present
 
-v = NCDatasets.@select(ds["SST"],time ≈ DateTime(2000,1,3,1) ± Hour(2))
+v = @select(ds["SST"],time ≈ DateTime(2000,1,3,1) ± Hour(2))
 
 close(ds)
 ```
@@ -196,7 +200,7 @@ end
 ds = NCDataset(fname)
 
 # load all temperature data from January where the salinity is larger than 35.
-v = NCDatasets.@select(ds["temperature"],Dates.month(time) == 1 && salinity >= 35)
+v = @select(ds["temperature"],Dates.month(time) == 1 && salinity >= 35)
 
 # this is equivalent to
 v2 = ds["temperature"][findall(Dates.month.(time) .== 1 .&& salinity .>= 35)]
@@ -245,7 +249,68 @@ macro select(v,expression)
     return Expr(:call,:select,esc(v),args...)
 end
 
+"""
+    vsubset = CommonDataModel.select(v,param1 => condition1, param2 => condition2,...)
+    dssubset = CommonDataModel.select(ds,param1 => condition1, param2 => condition2,...)
 
+Return a subset of the variable `v` (or dataset `ds`) satisfying the conditions
+applied to the corresponding parameters. `param1`, `param2` ... are symbols or
+strings with variable names and `condition1`, `condition2` ... are functions
+taking as a argument the values of the corresponding parameter and return
+either false (ignore the corresponding elements) or true (select the
+corresponding elements for loading).
+
+## Examples
+
+Create a sample file with random data:
+
+```julia
+using NCDatasets, Dates
+using CommonDataModel: select, Near
+
+fname = "sample_file.nc"
+lon = -180:180
+lat = -90:90
+time = DateTime(2000,1,1):Day(1):DateTime(2000,1,3)
+SST = randn(length(lon),length(lat),length(time));
+
+ds = NCDataset(fname,"c")
+defVar(ds,"lon",lon,("lon",));
+defVar(ds,"lat",lat,("lat",));
+defVar(ds,"time",time,("time",));
+defVar(ds,"SST",SST,("lon","lat","time"));
+
+
+# load by bounding box
+v = select(ds["SST"],
+           :lon => lon -> 30 <= lon <= 60,
+           :lat => lat -> 40 <= lat <= 80)
+
+# You can also select based on `ClosedInterval`s from `IntervalSets.jl`.
+# Both 30..60 and 60 ± 20 construct `ClosedInterval`s, see their documentation for details. `∈` can be typed `\\in` followed by the TAB-key.
+
+using IntervalSets
+v = select(ds["SST"], :lon => ∈(30..60), :lat => ∈(60 ± 20))
+
+# get the indices matching the select query
+(lon_indices,lat_indices,time_indices) = parentindices(v)
+
+# get longitude matchting the select query
+v_lon = v["lon"]
+
+# find the nearest time instance
+v = select(ds["SST"],:time => Near(DateTime(2000,1,4)))
+
+# find the nearest time instance but not earlier or later than 2 hours
+# an empty array is returned if no time instance is present
+
+v = select(ds["SST"],:time => Near(DateTime(2000,1,3,1),Hour(2)))
+
+close(ds)
+```
+
+See also [`@select`](@ref CommonDataModel.@select) for more information.
+"""
 function select(v,conditions...)
     coord_names = coordinate_names(v)
     if v isa AbstractArray

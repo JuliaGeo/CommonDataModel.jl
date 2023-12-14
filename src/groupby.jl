@@ -207,8 +207,6 @@ end
 """
     gv = CommonDataModel.groupby(v::AbstractVariable,:coordname => group_fun)
     gv = CommonDataModel.groupby(v::AbstractVariable,"coordname" => group_fun)
-    gv = CommonDataModel.@groupby(v,group_fun(coordname))
-
 
 Create a grouped variable `gv` whose elements composed by all elements in `v`
 whose corresponding coordinate variable (with the name `coordname`) map to the
@@ -230,7 +228,7 @@ Example:
 
 ```julia
 using NCDatasets, Dates
-using CommonDataModel: @groupby
+using CommonDataModel: @groupby, groupby
 
 # create same test data
 
@@ -243,18 +241,29 @@ defVar(ds,"data",data,("lon","lat","time"));
 
 # group over month
 
-gv = @groupby(ds["data"],Dates.Month(time));
+gv = @groupby(ds["data"],Dates.Month(time))
+# or
+# gv = groupby(ds["data"],:time => Dates.Month)
 length(gv)
 # output 12 as they are all 12 months in this dataset
-gv[1]
+size(gv[1])
 # 360 x 180 x 310 array with all time slices corresponding to the 1st month
+
+# the variable `gv` is equivalent to the following operation
+time_month = Dates.Month.(ds[:time][:])
+gv2 = [ds[:data][:,:,findall(time_month .== m)] for m in sort(unique(time_month))];
 
 # compute basic statistics
 
 using Statistics
-monthly_mean = mean(gv)[:,:,:];
+monthly_mean = mean(gv);
 size(monthly_mean)
 # 360 x 180 x 12 array with the monthly mean
+
+# get a regular julia array
+monthly_mean_array = monthly_mean[:,:,:];
+typeof(monthly_mean_array)
+# Array{Float32, 3}
 
 # substact from data the corresponding monthly mean
 monthly_anomalies = data .- mean(gv);
@@ -274,7 +283,21 @@ function groupby(v::AbstractVariable,(coordname,group_fun)::Pair{<:SymbolOrStrin
     return GroupedVariable(v,coordname,group_fun,class,unique_class,dim,map_fun)
 end
 
-group(gv::GroupedVariable,k) = gv.unique_class[k]
+"""
+    gv = CommonDataModel.@groupby(v,group_fun(coordname))
+
+
+Create a grouped variable `gv` whose elements are composed by all elements in `v`
+whose corresponding coordinate variable (with the name `coordname`) map to the
+same value once the group function `group_fun` is applied to the coordinate variable.
+
+See [`groupby`](@ref CommonDataModel.groupby) for more information.
+"""
+macro groupby(vsym,expression)
+    (param, newsym),exp = scan_coordinate_name(expression)
+    fun = :($newsym -> $exp)
+    return :(groupby($(esc(vsym)),$(Meta.quot(param)) => $fun))
+end
 
 function ReducedGroupedVariable(gv::GroupedVariable,reduce_fun)
     T = eltype(gv.v)
@@ -282,13 +305,19 @@ function ReducedGroupedVariable(gv::GroupedVariable,reduce_fun)
     ReducedGroupedVariable{T,N,typeof(gv),typeof(reduce_fun)}(gv,reduce_fun)
 end
 
+"""
+    gr = reduce(f,gv::GroupedVariable)
 
-Base.sum(gv::GroupedVariable) = ReducedGroupedVariable(gv,sum)
-Statistics.mean(gv::GroupedVariable) = ReducedGroupedVariable(gv,mean)
-Statistics.median(gv::GroupedVariable) = ReducedGroupedVariable(gv,median)
-Statistics.std(gv::GroupedVariable) = ReducedGroupedVariable(gv,std)
-Statistics.var(gv::GroupedVariable) = ReducedGroupedVariable(gv,var)
+Reduce the grouped variable `gv` along grouped dimension using the function `f`.
+The function `f` will be called as `f(x,dims=d)` where `x` array (an element
+of `gv`) and `d` is an integer of the dimension overwhich one need to reduce
+`x`.
+"""
+Base.reduce(f,gv::GroupedVariable) = ReducedGroupedVariable(gv,f)
 
+for fun in (:maximum, :mean, :median, :minimum, :std, :sum, :var)
+    @eval $fun(gv::GroupedVariable) = reduce($fun,gv)
+end
 
 # methods with ReducedGroupedVariable as main argument
 
@@ -306,12 +335,12 @@ Base.size(gr::ReducedGroupedVariable) = ntuple(ndims(gr)) do i
         size(gr.gv.v,i)
     end
 end
+
 dimnames(gr::ReducedGroupedVariable) = dimnames(gr.gv.v)
 name(gr::ReducedGroupedVariable) = name(gr.gv.v)
 
 struct ReducedGroupedVariableStyle <: BroadcastStyle end
 Base.BroadcastStyle(::Type{<:ReducedGroupedVariable}) = ReducedGroupedVariableStyle()
-
 
 function Base.similar(bc::Broadcasted{ReducedGroupedVariableStyle}, ::Type{ElType})  where ElType
     # Scan the inputs for the ReducedGroupedVariable:
@@ -365,9 +394,6 @@ Base.broadcasted(f,A::ReducedGroupedVariable,B) = broadcasted_gvr!(similar(B),f,
 
 _array_selectdim(x) = Array(selectdim(x,1,[1]))
 
-
-
-
 function Base.Array(gr::ReducedGroupedVariable)
     gr[ntuple(i -> Colon(),ndims(gr))...]
 end
@@ -409,12 +435,6 @@ function Base.getindex(gr::ReducedGroupedVariable{T},indices::Union{Integer,Colo
     end
 
     return data_by_class
-end
-
-macro groupby(vsym,expression)
-    (param, newsym),exp = scan_coordinate_name(expression)
-    fun = :($newsym -> $exp)
-    return :(groupby($(esc(vsym)),$(Meta.quot(param)) => $fun))
 end
 
 

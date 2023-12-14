@@ -34,7 +34,13 @@ ds.attrib["title"] = "my amazing results";
 ```
 Variables can be accessed by directly indexing the `AbstractDataset`.
 
-Every struct deriving from `AbstractVariable` have the properties `dim`, and `attrib`.
+Every struct deriving from `AbstractVariable` has the properties `dim`, and `attrib`.
+
+Current functionalities of CommonDataModel include:
+* virtually concatenating files along a given dimension
+* create a virtual subset (([`view`](@ref Base.view))) by indices or by values of coordinate variables ([`select`](@ref CommonDataModel.select), [`@select`](@ref CommonDataModel.@select))
+* group, map and reduce a variable ([`groupby`](@ref CommonDataModel.groupby), [`@groupby`](@ref CommonDataModel.@groupby))
+
 
 
 ## API
