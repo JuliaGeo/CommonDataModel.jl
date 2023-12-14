@@ -14,6 +14,9 @@ using CommonDataModel:
     _indices,
     groupby
 
+
+#include("memory_dataset.jl");
+
 #TDS = NCDatasets.NCDataset
 TDS = MemoryDataset
 
@@ -46,7 +49,8 @@ fname = tempname()
 
 TDS(fname,"c") do ds
     defVar(ds,"time",time,("time",))
-    defVar(ds,"data",data,("lon","lat","time"),attrib=Dict("foo" => "bar"))
+    defVar(ds,"data",data,("lon","lat","time"))
+    defVar(ds,"data2",data .+ 1,("lon","lat","time"))
 end
 
 ds = TDS(fname)
@@ -167,3 +171,17 @@ end
 
 Cn = mean(@groupby(v,Dates.Month(time))) .- v
 @test Cn ≈ -Cref
+
+# parent dataset
+
+gr = mean(@groupby(v,Dates.Month(time)))
+
+gds = dataset(gr);
+@test Set(keys(gds)) == Set(keys(ds))
+@test variable(gds,"data")[:,:,:] ≈ gr[:,:,:]
+
+
+gr2 = mean(@groupby(ds["data2"],Dates.Month(time)))
+@test gds["data"][:,:,:] ≈ gr[:,:,:]
+@test gds["data2"][:,:,:] ≈ gr2[:,:,:]
+@test gr2["data2"][:,:,:] ≈ gr2[:,:,:]

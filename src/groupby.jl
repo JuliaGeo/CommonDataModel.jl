@@ -19,9 +19,14 @@ _dest_indices(j,ku,indices) = _indices_helper(j,ku,1,:,indices...)
 @inline _size_getindex(array,sh,n,i,         indexes...) = _size_getindex(array,(sh...,length(i)),    n+1,indexes...)
 @inline _size_getindex(array,sh,n) = sh
 
-struct GroupedDataset{TDS,TF}
+struct GroupedDataset{TDS,TF,TClass,TM,TRF} <: AbstractDataset
     ds::TDS # dataset
+    coordname::Symbol
     group_fun::TF # mapping function
+    class::Vector{TClass}
+    unique_class::Vector{TClass}
+    map_fun::TM
+    reduce_fun::TRF
 end
 
 struct GroupedVariable{TV,TF,TClass,TM,TG} <: AbstractVector{TG} where TV <: AbstractArray{T,N} where {T,N}
@@ -49,7 +54,7 @@ Base.show(io::IO,gv::GroupedVariable) = Base.show(io,MIME"text/plain",gv)
 
 # reduce_fun is e.g. sum, mean, var,...
 # map_fun is the mapping function applied before reduction
-struct GroupedVariableResult{T,N,TGV,TF}  <: AbstractArray{T,N}
+struct GroupedVariableResult{T,N,TGV,TF}  <: AbstractVariable{T,N}
     gv::TGV
     reduce_fun::TF
 end
@@ -60,7 +65,6 @@ function Base.show(io::IO,::MIME"text/plain",gv::GroupedVariableResult)
         "$(gv.reduce_fun)")
 end
 
-Base.show(io::IO,gv::GroupedVariableResult) = Base.show(io,MIME"text/plain",gv)
 Base.ndims(gv::GroupedVariable) = 1
 Base.size(gv::GroupedVariable) = (length(gv.unique_class),)
 Base.eltype(gv::GroupedVariable{TV,TF,TClass,TM,TG}) where {TV,TF,TClass,TM,TG} = TG
@@ -132,6 +136,8 @@ Base.size(gr::GroupedVariableResult) = ntuple(ndims(gr)) do i
         size(gr.gv.v,i)
     end
 end
+dimnames(gr::GroupedVariableResult) = dimnames(gr.gv.v)
+name(gr::GroupedVariableResult) = name(gr.gv.v)
 
 struct GroupedVariableStyle <: BroadcastStyle end
 struct GroupedVariableResultStyle <: BroadcastStyle end
@@ -227,6 +233,19 @@ Base.broadcasted(f,A::GroupedVariableResult,B) = broadcasted_gvr!(similar(B),f,A
 
 _array_selectdim(x) = Array(selectdim(x,1,[1]))
 
+
+function GroupedVariable(v::TV,coordname,group_fun::TF,class,unique_class,dim,map_fun::TM) where TV <: AbstractVariable where {TF,TM}
+    TClass = eltype(class)
+
+    #TG = Base.return_types(selectdim,(TV,Int,Int,))[1]
+    TG = Base.return_types(_array_selectdim,(TV,))[1]
+
+    @debug "inferred types" TV TF TClass TM TG
+    GroupedVariable{TV,TF,TClass,TM,TG}(
+        v,Symbol(coordname),group_fun,class,unique_class,dim,map_fun)
+end
+
+
 """
     gv = CommonDataModel.groupby(v::AbstractVariable,:coordname => group_fun)
     gv = CommonDataModel.groupby(v::AbstractVariable,"coordname" => group_fun)
@@ -290,22 +309,11 @@ close(ds)
 function groupby(v::TV,(coordname,group_fun)::Pair{<:SymbolOrString,TF}) where TV <: AbstractVariable where TF
     # for NCDatasets 0.12
     c = v[String(coordname)][:]
-
     class = group_fun.(c)
     unique_class = sort(unique(class))
-
     dim = findfirst(==(Symbol(coordname)),Symbol.(dimnames(v)))
     map_fun = identity
-
-    TClass = eltype(class)
-
-    #TG = Base.return_types(selectdim,(TV,Int,Int,))[1]
-    TG = Base.return_types(_array_selectdim,(TV,))[1]
-    TM = typeof(map_fun)
-
-    @debug "inferred types" TV TF TClass TM TG
-    GroupedVariable{TV,TF,TClass,TM,TG}(
-        v,Symbol(coordname),group_fun,class,unique_class,dim,map_fun)
+    return GroupedVariable(v,coordname,group_fun,class,unique_class,dim,map_fun)
 end
 
 
@@ -331,23 +339,15 @@ function Base.Array(gr::GroupedVariableResult)
     gr[ntuple(i -> Colon(),ndims(gr))...]
 end
 
-function Base.getindex(gr::GroupedVariableResult{T,N,TGV,typeof(sum)},indices...) where {T,N,TGV}
+function Base.getindex(gr::GroupedVariableResult{T,N,TGV,typeof(sum)},indices::Union{Integer,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...) where {T,N,TGV}
     data,count = _mapreduce(gr.gv.map_fun,+,gr.gv,indices)
     data
 end
 
-function Base.getindex(gr::GroupedVariableResult{T,N,TGV,typeof(mean)},indices...) where {T,N,TGV}
+function Base.getindex(gr::GroupedVariableResult{T,N,TGV,typeof(mean)},indices::Union{Integer,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...) where {T,N,TGV}
     data,count = _mapreduce(gr.gv.map_fun,+,gr.gv,indices)
     data ./ count
 end
-
-#=
-function Base.getindex(gr::GroupedVariableResult{T,N,TGV,typeof(var)},indices...) where {T,N,TGV}
-    data,count = _reduce(+,gr.gv.v,gr.gv.coordname,gr.gv.group_fun,indices)
-    data ./ count
-end
-=#
-
 
 _dim_after_getindex(dim,ind::Union{Colon,AbstractRange,AbstractVector},other...) = _dim_after_getindex(dim+1,other...)
 _dim_after_getindex(dim,ind::Integer,other...) = _dim_after_getindex(dim,other...)
@@ -383,4 +383,38 @@ macro groupby(vsym,expression)
     (param, newsym),exp = scan_coordinate_name(expression)
     fun = :($newsym -> $exp)
     return :(groupby($(esc(vsym)),$(Meta.quot(param)) => $fun))
+end
+
+
+function dataset(gr::GroupedVariableResult)
+    gv = gr.gv
+    ds = dataset(gv.v)
+
+    return GroupedDataset(
+        ds,gv.coordname,gv.group_fun,
+        gv.class,gv.unique_class,
+        gv.map_fun,
+        gr.reduce_fun,
+    )
+end
+
+Base.keys(gds::GroupedDataset) = keys(gds.ds)
+
+function variable(gds::GroupedDataset,varname::SymbolOrString)
+    v = variable(gds.ds,varname)
+
+    dim = findfirst(==(gds.coordname),Symbol.(dimnames(v)))
+    if isnothing(dim)
+        return v
+    else
+        gv = GroupedVariable(
+            v,
+            gds.coordname,
+            gds.group_fun,
+            gds.class,
+            gds.unique_class,
+            dim,
+            gds.map_fun)
+        return GroupedVariableResult(gv,gds.reduce_fun)
+    end
 end
