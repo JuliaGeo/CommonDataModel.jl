@@ -6,6 +6,7 @@ using Statistics
 using CommonDataModel
 using CommonDataModel:
     @groupby,
+    name,
     GroupedVariable,
     ReducedGroupedVariable,
     _array_selectdim_indices,
@@ -48,6 +49,8 @@ varname = "data"
 fname = tempname()
 
 TDS(fname,"c") do ds
+    defVar(ds,"lon",1:size(data,1),("lon",))
+    defVar(ds,"lat",1:size(data,2),("lat",))
     defVar(ds,"time",time,("time",))
     defVar(ds,"data",data,("lon","lat","time"))
     defVar(ds,"data2",data .+ 1,("lon","lat","time"))
@@ -188,3 +191,16 @@ gr2 = mean(@groupby(ds["data2"],Dates.Month(time)))
 @test gds["data"][:,:,:] ≈ gr[:,:,:]
 @test gds["data2"][:,:,:] ≈ gr2[:,:,:]
 @test gr2["data2"][:,:,:] ≈ gr2[:,:,:]
+
+
+@test gds["lon"][:] == 1:size(data,1)
+io = IOBuffer()
+show(io,"text/plain",gr)
+@test occursin("array", String(take!(io)))
+
+io = IOBuffer()
+show(io,"text/plain",gv)
+@test occursin("array", String(take!(io)))
+
+@test eltype(gv) == Array{Float32,3}
+@test name(gr) == "data"
