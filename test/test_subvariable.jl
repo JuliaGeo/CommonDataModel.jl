@@ -212,5 +212,5 @@ ncsst3 = @select(ncsst,lon ≈ 2 && lat ≈ 3)
 
 ss = ncsst3["time"]
 @test ss[1] == DateTime(2000,1,1)
-
+@test ndims(view(ncsst,:,1,1)) == 1
 close(ds)

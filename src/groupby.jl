@@ -301,6 +301,9 @@ end
 
 function ReducedGroupedVariable(gv::GroupedVariable,reduce_fun)
     T = eltype(gv.v)
+    #@show T, reduce_fun
+    #@show Base.return_types(reduce_fun, (Vector{T},))
+
     N = ndims(gv.v)
     ReducedGroupedVariable{T,N,typeof(gv),typeof(reduce_fun)}(gv,reduce_fun)
 end

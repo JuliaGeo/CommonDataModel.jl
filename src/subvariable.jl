@@ -22,7 +22,7 @@ function SubVariable(A::AbstractVariable,indices...)
         end
     end
     T = eltype(A)
-    N = ndims(A)
+    N = length(size_getindex(A,indices...))
     return SubVariable{T,N,typeof(A),typeof(indices),typeof(A.attrib),typeof(var)}(
         A,indices,A.attrib,var)
 end
