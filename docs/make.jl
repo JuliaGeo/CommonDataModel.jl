@@ -10,6 +10,8 @@ Literate.markdown(
     # does not look nice
     credit = false,
 )
+# remove datafile
+rm("docs/src/sst.day.mean.2023.nc")
 
 makedocs(;
     modules=[CommonDataModel],
