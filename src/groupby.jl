@@ -190,13 +190,11 @@ function Base.broadcasted(f,A::GroupedVariable{TV,TF,TClass,TM,TG}) where {TV,TF
         A.v,A.coordname,A.group_fun,A.class,A.unique_class,A.dim,map_fun)
 end
 
-
-
 function GroupedVariable(v::TV,coordname,group_fun::TF,class,unique_class,dim,map_fun::TM) where TV <: AbstractVariable where {TF,TM}
     TClass = eltype(class)
 
     #TG = Base.return_types(selectdim,(TV,Int,Int,))[1]
-    TG = Base.return_types(_array_selectdim,(TV,))[1]
+    TG = Base.return_types(_array_selectdim,(TV,Int,Vector{Int}))[1]
 
     @debug "inferred types" TV TF TClass TM TG
     GroupedVariable{TV,TF,TClass,TM,TG}(
@@ -395,7 +393,6 @@ end
 Base.broadcasted(f,A,B::ReducedGroupedVariable) = broadcasted_gvr!(similar(A),f,A,B)
 Base.broadcasted(f,A::ReducedGroupedVariable,B) = broadcasted_gvr!(similar(B),f,A,B)
 
-_array_selectdim(x) = Array(selectdim(x,1,[1]))
 
 function Base.Array(gr::ReducedGroupedVariable)
     gr[ntuple(i -> Colon(),ndims(gr))...]

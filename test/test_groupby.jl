@@ -202,5 +202,8 @@ io = IOBuffer()
 show(io,"text/plain",gv)
 @test occursin("array", String(take!(io)))
 
-@test eltype(gv) == Array{Float32,3}
+if VERSION > v"1.7"
+    # type inference does not work in julia 1.6
+    @test eltype(gv) == Array{Float32,3}
+end
 @test name(gr) == "data"
