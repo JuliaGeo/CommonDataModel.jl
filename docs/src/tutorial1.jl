@@ -6,8 +6,8 @@
 using CommonDataModel: @select, @CF_str, @groupby, groupby
 using Dates
 using Downloads: download
-#using CairoMakie # use GLMakie for interactive plots
-using GLMakie
+using CairoMakie # use GLMakie for interactive plots
+#using GLMakie
 using IntervalSets
 using NCDatasets
 using Statistics
@@ -36,6 +36,10 @@ function nicetimeseries(v::AbstractVector; time = v["time"][:], title = nothing,
     return fig
 end
 
+# Download the data file (unless already downloaded)
+# The dataset contains the variables `lon` (longitude), `lat` (latitude), `time`
+# and `sst` (sea surface temperature).
+
 url = "https://psl.noaa.gov/thredds/fileServer/Datasets/noaa.oisst.v2.highres/sst.day.mean.2023.nc"
 
 fname = "sst.day.mean.2023.nc"
@@ -43,7 +47,7 @@ if !isfile(fname)
     download(url,fname)
 end
 
-
+# Open the dataset and access the variable sst
 ds = NCDataset(fname)
 ncsst = ds["sst"]
 lon = ds[CF"longitude"]
