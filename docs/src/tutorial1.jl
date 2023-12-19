@@ -48,9 +48,9 @@ if !isfile(fname)
 end
 
 # Open the dataset and access the variable sst
+
 ds = NCDataset(fname)
 ncsst = ds["sst"]
-lon = ds[CF"longitude"]
 
 ncsst2 = @select(ncsst,300 <= lon <= 360 && 0 <= lat <= 46 && time ≈ DateTime(2023,12,24))
 
