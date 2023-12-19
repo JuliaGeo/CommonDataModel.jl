@@ -2,7 +2,7 @@ using Documenter: Documenter, makedocs, deploydocs
 using CommonDataModel
 using Literate
 
-Literate.markdown("src/tutorial1.jl","src",execute = true, documenter = true)
+Literate.markdown("docs/src/tutorial1.jl","docs/src",execute = true, documenter = true)
 
 makedocs(;
     modules=[CommonDataModel],
