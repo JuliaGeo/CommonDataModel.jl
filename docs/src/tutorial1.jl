@@ -117,8 +117,7 @@ lon_equator[1:3]
 
 # ## Grouping and reducing
 #
-# With the function ([`groupby`](@ref CommonDataModel.groupby) and macro [`@groupby`](@ref CommonDataModel.@groupby))
-# we can group the variable by a given criteria.
+# With the function [`groupby`](@ref CommonDataModel.groupby) and macro [`@groupby`](@ref CommonDataModel.@groupby) we can group the variable by a given criteria.
 # For each group, we can then apply a reducting function (`mean`, `sum`, `std`, ...).
 
 # For example group the SST by month and average per month:
@@ -133,7 +132,7 @@ nicemaps(sst_mean, timeindex = 1, title = "Mean January SST")
 
 # Use custom julia function for grouping:
 # The [Atlantic hurricane season](https://en.wikipedia.org/w/index.php?title=Atlantic_hurricane_season&oldid=1189144955) is the period in a year, from June 1 through November 30, when tropical or subtropical cyclones are most likely to form in the North Atlantic Ocean.
-# The data will be grouped into two cases: false (time outside the Atlantic hurricane season) and true (time is within the Atlantic hurricane season).
+# The data will be grouped into two cases: `false` (time outside the Atlantic hurricane season) and `true` (time is within the Atlantic hurricane season).
 # We plot only the 2nd group.
 
 sst_na = @select(ncsst,300 <= lon <= 360 && 0 <= lat <= 46)
@@ -141,7 +140,7 @@ sst_hs = mean(@groupby(sst_na,DateTime(year(time),6,1) <= time <= DateTime(year(
 
 nicemaps(sst_hs,timeindex = 2, title = "mean SST during the Atlantic hurricane season")
 
-# Use a function without the `@groupby` macro
+# Use a user defined function `is_atlantic_hurricane_season` without the `@groupby` macro:
 
 is_atlantic_hurricane_season(time) =
     DateTime(year(time),6,1) <= time <= DateTime(year(time),11,30)
@@ -150,7 +149,7 @@ sst_std_hs = std(groupby(sst_na,:time => is_atlantic_hurricane_season));
 
 nicemaps(sst_std_hs,timeindex = 2, title = "std SST during the Atlantic hurricane season")
 
-# Use a custom aggregation function:
+# Use a custom aggregation function to
 # estimate the probability that the temperature exceeds 26°C during
 # the Atlantic hurricane season
 
