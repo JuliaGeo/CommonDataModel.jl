@@ -1,5 +1,6 @@
 [![Build Status](https://github.com/JuliaGeo/CommonDataModel.jl/workflows/CI/badge.svg)](https://github.com/JuliaGeo/CommonDataModel.jl/actions)
 [![codecov.io](http://codecov.io/github/JuliaGeo/CommonDataModel.jl/coverage.svg?branch=main)](http://app.codecov.io/github/JuliaGeo/CommonDataModel.jl?branch=main)
+[![documentation stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliageo.github.io/CommonDataModel.jl/stable/)
 [![documentation dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliageo.github.io/CommonDataModel.jl/dev/)
 
 
