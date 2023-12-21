@@ -120,7 +120,7 @@ end
 
 
 """
-    v = getindex(ds::NCDataset, varname::AbstractString)
+    v = getindex(ds::NCDataset, varname::SymbolOrString)
 
 Return the variable `varname` in the dataset `ds` as a
 `CFVariable`. The following CF convention are honored when the
