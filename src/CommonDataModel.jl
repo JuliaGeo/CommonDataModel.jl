@@ -44,6 +44,7 @@ include("multifile.jl")
 include("defer.jl")
 include("subvariable.jl")
 include("select.jl")
+include("aggregation.jl")
 include("groupby.jl")
 
 end # module CommonDataModel

@@ -151,6 +151,40 @@ function _mapreduce(map_fun,reduce_op,gv::GroupedVariable{TV},indices;
     return data_by_class,reshape(count,_indices(dim,length(count),1,indices))
 end
 
+
+
+function _mapreduce_aggregation(map_fun,ag,gv::GroupedVariable{TV},indices) where TV <: AbstractArray{T,N} where {T,N}
+    data = gv.v
+    dim = findfirst(==(Symbol(gv.coordname)),Symbol.(dimnames(data)))
+    class = _val.(gv.class)
+    unique_class = _val.(gv.unique_class[indices[dim]])
+    group_fun = gv.group_fun
+
+    nclass = length(unique_class)
+    sz_all = ntuple(i -> (i == dim ? nclass : size(data,i) ),ndims(data))
+    sz = size_getindex(sz_all,indices...)
+
+    data_by_class = fill(ag(T),sz)
+
+    count = zeros(Int,nclass)
+    for k = 1:size(data,dim)
+        ku = findfirst(==(class[k]),unique_class)
+
+        if !isnothing(ku)
+            dest_ind = _dest_indices(dim,ku,indices)
+            src_ind = ntuple(i -> (i == dim ? k : indices[i] ),ndims(data))
+            #@show size(data_by_class),dest_ind, indices
+            #@show src_ind
+            data_by_class_ind = view(data_by_class,dest_ind...)
+            std_data_ind = map_fun(data[src_ind...])
+
+            data_by_class_ind .= update.(data_by_class_ind,std_data_ind)
+        end
+    end
+
+    return result.(data_by_class)
+end
+
 function _reduce(args...; kwargs...)
     _mapreduce(identity,args...; kwargs...)
 end
@@ -407,6 +441,21 @@ function Base.getindex(gr::ReducedGroupedVariable{T,N,TGV,typeof(mean)},indices:
     data,count = _mapreduce(gr.gv.map_fun,+,gr.gv,indices)
     data ./ count
 end
+
+
+function Base.getindex(gr::ReducedGroupedVariable{T,N,TGV,typeof(var)},indices::Union{Integer,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...) where {T,N,TGV}
+
+    return _mapreduce_aggregation(
+        gr.gv.map_fun,VarianceWelfordAggegation,gr.gv,indices);
+end
+
+
+function Base.getindex(gr::ReducedGroupedVariable{T,N,TGV,typeof(std)},indices::Union{Integer,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...) where {T,N,TGV}
+
+    return sqrt.(_mapreduce_aggregation(
+        gr.gv.map_fun,VarianceWelfordAggegation,gr.gv,indices))
+end
+
 
 _dim_after_getindex(dim,ind::Union{Colon,AbstractRange,AbstractVector},other...) = _dim_after_getindex(dim+1,other...)
 _dim_after_getindex(dim,ind::Integer,other...) = _dim_after_getindex(dim,other...)
