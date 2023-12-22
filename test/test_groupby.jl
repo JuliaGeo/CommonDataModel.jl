@@ -48,12 +48,18 @@ varname = "data"
 
 fname = tempname()
 
+data3 = Array{Union{Missing,Float32},3}(undef,size(data))
+data3 .= data
+data3[1,1,:] .= missing
+data3[1,2,1] = missing
+
 TDS(fname,"c") do ds
     defVar(ds,"lon",1:size(data,1),("lon",))
     defVar(ds,"lat",1:size(data,2),("lat",))
     defVar(ds,"time",time,("time",))
     defVar(ds,"data",data,("lon","lat","time"))
     defVar(ds,"data2",data .+ 1,("lon","lat","time"))
+    defVar(ds,"data3",data3,("lon","lat","time"))
 end
 
 ds = TDS(fname)
@@ -207,3 +213,12 @@ if VERSION > v"1.7"
     @test eltype(gv) == Array{Float32,3}
 end
 @test name(gr) == "data"
+
+month_time = Dates.month.(ds[coordname][:])
+ncdata = ds["data3"][:,:,:]
+var_ref = cat([var(ncdata[:,:,findall(month_time .== m)],dims=3)
+          for m in 1:12]...,dims=3)
+
+gvar = var(@groupby(ds["data3"],Dates.Month(time)))[:,:,:]
+@test ismissing.(gvar) == ismissing.(var_ref)
+@test collect(skipmissing(gvar[:]))  ≈ collect(skipmissing(var_ref[:]))

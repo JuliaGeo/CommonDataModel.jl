@@ -6,7 +6,7 @@ struct VarianceWelfordAggegation{Ti,T}
 end
 
 function VarianceWelfordAggegation(T)
-    VarianceWelfordAggegation(0,zero(T),zero(T))
+    VarianceWelfordAggegation{Int,T}(0,zero(T),zero(T))
 end
 
 #function VarianceWelfordAggegation(::Type{<:Array{T,N}}) where {T,N}
@@ -14,7 +14,7 @@ end
 #end
 
 # Welford's online algorithm
-@inline function update(ag::VarianceWelfordAggegation, new_value)
+@inline function update(ag::VarianceWelfordAggegation{Ti,T}, new_value) where {Ti,T}
     count = ag.count
     mean = ag.mean
     M2 = ag.M2
@@ -24,7 +24,7 @@ end
     mean += delta / count
     delta2 = new_value - mean
     M2 += delta * delta2
-    return VarianceWelfordAggegation(count, mean, M2)
+    return VarianceWelfordAggegation{Ti,T}(count, mean, M2)
 end
 
 function result(ag::VarianceWelfordAggegation)
