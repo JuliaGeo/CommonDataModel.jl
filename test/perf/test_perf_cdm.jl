@@ -1,27 +1,37 @@
+# Benchmark to be run on Linux as root
+
 using BenchmarkTools
 using NCDatasets
 using Dates
 using CommonDataModel: @groupby
+using CommonDataModel
 
 fname = expanduser("~/sample_perf2.nc")
 ds = NCDataset(fname)
 
-v = ds[:data]
+data_f64 = Float64.(ds[:data][:,:,:])
+
+println("runtime")
+gm = @btime begin
+    write("/proc/sys/vm/drop_caches","3")
+    mean(@groupby(ds[:data],Dates.Month(time)))[:,:,:];
+end
+
+# Welford
+gs = @btime begin
+    write("/proc/sys/vm/drop_caches","3")
+    std(@groupby(ds[:data],Dates.Month(time)))[:,:,:];
+end
+
+println("accuracy")
 
 mean_ref = cat(
-        [mean(v[:,:,findall(Dates.month.(ds[:time][:]) .== m)],dims=3)
+        [mean(data_f64[:,:,findall(Dates.month.(ds[:time][:]) .== m)],dims=3)
          for m in 1:12]...,dims=3);
 
 std_ref = cat(
-        [std(v[:,:,findall(Dates.month.(ds[:time][:]) .== m)],dims=3)
+        [std(data_f64[:,:,findall(Dates.month.(ds[:time][:]) .== m)],dims=3)
          for m in 1:12]...,dims=3);
 
-
-gm = @btime mean(@groupby(ds[:data],Dates.Month(time)))[:,:,:];
-# 1.005 s (523137 allocations: 2.67 GiB)
-
 @show sqrt(mean((gm - mean_ref).^2))
-
-# Welford
-gs = @btime std(@groupby(ds[:data],Dates.Month(time)))[:,:,:];
 @show sqrt(mean((gs - std_ref).^2))
