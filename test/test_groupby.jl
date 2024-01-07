@@ -84,6 +84,7 @@ for reduce_fun in (sum,mean,var,std,median,maximum)
         (:,:,2),
         ]
 
+        #@show reduce_fun,indices
         local data_by_class
         data_by_class = reduce_fun(groupby(ds[varname],:time => Dates.Month))[indices...]
         @test data_by_class ≈ data_by_class_ref[indices...]

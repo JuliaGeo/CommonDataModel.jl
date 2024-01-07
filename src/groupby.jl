@@ -2,23 +2,31 @@
 # types
 #
 
-struct GroupedDataset{TDS,TF,TClass,TM,TRF} <: AbstractDataset
+# mappings between groups and source data
+
+abstract type AbstractGroupMapping; end
+
+# non-overlapping groups
+struct GroupMapping{TClass,TUC} <: AbstractGroupMapping where {TClass <: AbstractVector{T}, TUC <: Union{T,AbstractVector{T}}}  where T
+    class::TClass
+    unique_class::TUC
+end
+
+struct GroupedDataset{TDS,TF,TGM,TM,TRF} <: AbstractDataset
     ds::TDS # dataset
     coordname::Symbol
     group_fun::TF # mapping function
-    class::Vector{TClass}
-    unique_class::Vector{TClass}
+    groupmap::TGM
     map_fun::TM
     reduce_fun::TRF
 end
 
-struct GroupedVariable{TV,TF,TClass,TM,TG} <: AbstractVector{TG} where TV <: AbstractArray{T,N} where {T,N}
+struct GroupedVariable{TV,TF,TGM,TM,TG} <: AbstractVector{TG} where TV <: AbstractArray{T,N} where {T,N}
     v::TV # dataset
     coordname::Symbol
     # mapping function to create groups when applied to coordinate
     group_fun::TF
-    class::Vector{TClass}
-    unique_class::Vector{TClass}
+    groupmap::TGM
     dim::Int
     map_fun::TM
 end
@@ -29,6 +37,55 @@ struct ReducedGroupedVariable{T,N,TGV,TF}  <: AbstractVariable{T,N}
     gv::TGV
     reduce_fun::TF
 end
+
+
+function dataindices(gmap::GroupMapping,ku)
+    class_ku = gmap.unique_class[ku]
+    return findall(==(class_ku),gmap.class)
+end
+
+function groupindices(gmap::GroupMapping,k)
+    # Types like Dates.Month behave different than normal scalars, e.g.
+    # julia> length(Dates.Month(1))
+    # ERROR: MethodError: no method matching length(::Month)
+
+    if gmap.unique_class isa DatePeriod
+        if gmap.unique_class == gmap.class[k]
+            return (1,)
+        else
+            return ()
+        end
+    end
+
+    for ku = 1:length(gmap.unique_class)
+        if gmap.unique_class[ku] == gmap.class[k]
+            return (ku,)
+        end
+    end
+    return ()
+end
+
+grouplabel(gmap::GroupMapping,ku) = gmap.unique_class[ku]
+
+
+# Types like Dates.Month behave different than normal scalars, e.g.
+# julia> length(Dates.Month(1))
+# ERROR: MethodError: no method matching length(::Month)
+
+_length(x) = length(x)
+_length(x::DatePeriod) = 1
+
+ngroups(gmap::GroupMapping) = _length(gmap.unique_class)
+ndata(gmap::GroupMapping) = length(gmap.class)
+
+
+function groupsubset(gmap::GroupMapping,kus)
+    return GroupMapping(gmap.class,gmap.unique_class[kus])
+end
+
+groupsubset(gmap::GroupMapping,kus::Colon) = gmap
+
+#--------------
 
 # helper function
 
@@ -69,8 +126,7 @@ function variable(gds::GroupedDataset,varname::SymbolOrString)
             v,
             gds.coordname,
             gds.group_fun,
-            gds.class,
-            gds.unique_class,
+            gds.groupmap,
             dim,
             gds.map_fun)
         return ReducedGroupedVariable(gv,gds.reduce_fun)
@@ -94,36 +150,30 @@ end
 
 Base.show(io::IO,gv::GroupedVariable) = Base.show(io,MIME"text/plain",gv)
 Base.ndims(gv::GroupedVariable) = 1
-Base.size(gv::GroupedVariable) = (length(gv.unique_class),)
-Base.eltype(gv::GroupedVariable{TV,TF,TClass,TM,TG}) where {TV,TF,TClass,TM,TG} = TG
-
-function group(gv::GroupedVariable,k::Integer)
-    class_k = gv.unique_class[k]
-    indices = findall(==(class_k),gv.class)
-    return class_k, indices
-end
+Base.size(gv::GroupedVariable) = (ngroups(gv.groupmap),)
+Base.eltype(gv::GroupedVariable{TV,TF,TGM,TM,TG}) where {TV,TF,TGM,TM,TG} = TG
 
 function Base.getindex(gv::GroupedVariable,k::Integer)
     class_k,indices = group(gv,k)
     return gv.map_fun(Array(selectdim(gv.v,gv.dim,indices)))
 end
 
-# Types like Dates.Month behave different than normal scalars, e.g.
-# julia> length(Dates.Month(1))
-# ERROR: MethodError: no method matching length(::Month)
-
-_val(x) = x
-_val(x::DatePeriod) = Dates.value(x)
+function group(gv::GroupedVariable,ku::Integer)
+    # make generic
+    class_ku = grouplabel(gv.groupmap,ku)
+    k = dataindices(gv.groupmap,ku)
+    return class_ku, k
+end
 
 function _mapreduce(map_fun,reduce_op,gv::GroupedVariable{TV},indices;
                  init = reduce(reduce_op,T[])) where TV <: AbstractArray{T,N} where {T,N}
     data = gv.v
     dim = findfirst(==(Symbol(gv.coordname)),Symbol.(dimnames(data)))
-    class = _val.(gv.class)
-    unique_class = _val.(gv.unique_class[indices[dim]])
     group_fun = gv.group_fun
 
-    nclass = length(unique_class)
+    groupmap = groupsubset(gv.groupmap,indices[dim])
+
+    nclass = ngroups(groupmap)
     sz_all = ntuple(i -> (i == dim ? nclass : size(data,i) ),ndims(data))
     sz = size_getindex(sz_all,indices...)
 
@@ -132,13 +182,10 @@ function _mapreduce(map_fun,reduce_op,gv::GroupedVariable{TV},indices;
 
     count = zeros(Int,nclass)
     for k = 1:size(data,dim)
-        ku = findfirst(==(class[k]),unique_class)
 
-        if !isnothing(ku)
+        for ku in groupindices(groupmap,k)
             dest_ind = _dest_indices(dim,ku,indices)
             src_ind = ntuple(i -> (i == dim ? k : indices[i] ),ndims(data))
-            #@show size(data_by_class),dest_ind, indices
-            #@show src_ind
             data_by_class_ind = view(data_by_class,dest_ind...)
 
             data_by_class_ind .= reduce_op.(
@@ -156,11 +203,10 @@ end
 function _mapreduce_aggregation(map_fun,ag,gv::GroupedVariable{TV},indices) where TV <: AbstractArray{T,N} where {T,N}
     data = gv.v
     dim = findfirst(==(Symbol(gv.coordname)),Symbol.(dimnames(data)))
-    class = _val.(gv.class)
-    unique_class = _val.(gv.unique_class[indices[dim]])
     group_fun = gv.group_fun
+    groupmap = groupsubset(gv.groupmap,indices[dim])
 
-    nclass = length(unique_class)
+    nclass = ngroups(groupmap)
     sz_all = ntuple(i -> (i == dim ? nclass : size(data,i) ),ndims(data))
     sz = size_getindex(sz_all,indices...)
 
@@ -168,16 +214,11 @@ function _mapreduce_aggregation(map_fun,ag,gv::GroupedVariable{TV},indices) wher
 
     count = zeros(Int,nclass)
     for k = 1:size(data,dim)
-        ku = findfirst(==(class[k]),unique_class)
-
-        if !isnothing(ku)
+        for ku in groupindices(groupmap,k)
             dest_ind = _dest_indices(dim,ku,indices)
             src_ind = ntuple(i -> (i == dim ? k : indices[i] ),ndims(data))
-            #@show size(data_by_class),dest_ind, indices
-            #@show src_ind
             data_by_class_ind = view(data_by_class,dest_ind...)
             std_data_ind = map_fun(data[src_ind...])
-
             data_by_class_ind .= update.(data_by_class_ind,std_data_ind)
         end
     end
@@ -209,7 +250,7 @@ function Base.similar(bc::Broadcasted{GroupedVariableStyle}, ::Type{ElType})  wh
     return A
 end
 
-function Base.broadcasted(f,A::GroupedVariable{TV,TF,TClass,TM,TG}) where {TV,TF,TClass,TM,TG}
+function Base.broadcasted(f,A::GroupedVariable{TV,TF,TGM,TM,TG}) where {TV,TF,TGM,TM,TG}
     # TODO change output TG
 
     map_fun = ∘(f,A.map_fun)
@@ -220,19 +261,21 @@ function Base.broadcasted(f,A::GroupedVariable{TV,TF,TClass,TM,TG}) where {TV,TF
     #TG = Base.return_types(selectdim,(TV,Int,Int,))[1]
     TG2 = Base.return_types(ff,(TV,Int,Int,))[1]
 
-    GroupedVariable{TV,TF,TClass,TM2,TG2}(
-        A.v,A.coordname,A.group_fun,A.class,A.unique_class,A.dim,map_fun)
+    GroupedVariable{TV,TF,TGM,TM2,TG2}(
+        A.v,A.coordname,A.group_fun,A.groupmap,A.dim,map_fun)
 end
 
-function GroupedVariable(v::TV,coordname,group_fun::TF,class,unique_class,dim,map_fun::TM) where TV <: AbstractVariable where {TF,TM}
-    TClass = eltype(class)
+function GroupedVariable(v::TV,coordname,group_fun::TF,groupmap,dim,map_fun::TM) where TV <: AbstractVariable where {TF,TM}
+    TGM = typeof(groupmap)
 
     #TG = Base.return_types(selectdim,(TV,Int,Int,))[1]
     TG = Base.return_types(_array_selectdim,(TV,Int,Vector{Int}))[1]
 
-    @debug "inferred types" TV TF TClass TM TG
-    GroupedVariable{TV,TF,TClass,TM,TG}(
-        v,Symbol(coordname),group_fun,class,unique_class,dim,map_fun)
+    @debug "inferred types" TV TF TGM TM TG
+#    groupmap = GroupMapping(class,unique_class)
+
+    GroupedVariable{TV,TF,TGM,TM,TG}(
+        v,Symbol(coordname),group_fun,groupmap,dim,map_fun)
 end
 
 
@@ -303,7 +346,6 @@ monthly_anomalies = data .- mean(gv);
 close(ds)
 ```
 
-
 """
 function groupby(v::AbstractVariable,(coordname,group_fun)::Pair{<:SymbolOrString,TF}) where TF
     # for NCDatasets 0.12
@@ -312,7 +354,8 @@ function groupby(v::AbstractVariable,(coordname,group_fun)::Pair{<:SymbolOrStrin
     unique_class = sort(unique(class))
     dim = findfirst(==(Symbol(coordname)),Symbol.(dimnames(v)))
     map_fun = identity
-    return GroupedVariable(v,coordname,group_fun,class,unique_class,dim,map_fun)
+    groupmap = GroupMapping(class,unique_class)
+    return GroupedVariable(v,coordname,group_fun,groupmap,dim,map_fun)
 end
 
 """
@@ -365,7 +408,7 @@ end
 Base.ndims(gr::ReducedGroupedVariable) = ndims(gr.gv.v)
 Base.size(gr::ReducedGroupedVariable) = ntuple(ndims(gr)) do i
     if i == gr.gv.dim
-        length(gr.gv.unique_class)
+        length(gr.gv)
     else
         size(gr.gv.v,i)
     end
@@ -408,10 +451,7 @@ function broadcasted_gvr!(C,f,A,B)
     gv = gr.gv
     dim = gr.gv.dim
 
-    unique_class = gv.unique_class
-    class = gv.class
-
-    for k = 1:length(unique_class)
+    for k = 1:length(gv)
         class_k, indices = group(gv,k)
 
         selectdim(C,dim,indices) .= broadcast(
@@ -493,7 +533,7 @@ function dataset(gr::ReducedGroupedVariable)
 
     return GroupedDataset(
         ds,gv.coordname,gv.group_fun,
-        gv.class,gv.unique_class,
+        gv.groupmap,
         gv.map_fun,
         gr.reduce_fun,
     )

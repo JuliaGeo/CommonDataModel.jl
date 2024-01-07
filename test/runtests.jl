@@ -33,4 +33,5 @@ end
 
 @testset "groupby" begin
     include("test_groupby.jl")
+    include("test_rolling.jl")
 end
