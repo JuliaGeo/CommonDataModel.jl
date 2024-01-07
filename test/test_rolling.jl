@@ -14,7 +14,7 @@ using CommonDataModel:
 using Statistics
 
 
-include("memory_dataset.jl");
+#include("memory_dataset.jl");
 
 function test_mapping(gmap,coord,rolling_classes)
     for k = 1:ndata(gmap)
@@ -33,7 +33,7 @@ end
 
 
 time = collect(DateTime(1980,1,1):Day(1):DateTime(1980,1,20))
-coord = time
+coordinate = time
 
 nn = 7
 
@@ -45,8 +45,8 @@ rolling_classes_ = [time[max(n-3,1):min(n+3,length(time))] for n = 1:length(time
 
 rolling_classes = [MClass(tuple(r...)) for r in rolling_classes_]
 
-gmap = OverlappingGroupMapping(coord,rolling_classes)
-test_mapping(gmap,coord,rolling_classes)
+gmap = OverlappingGroupMapping(coordinate,rolling_classes)
+test_mapping(gmap,coordinate,rolling_classes)
 
 
 

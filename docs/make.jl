@@ -6,12 +6,14 @@ Literate.markdown(
     "docs/src/tutorial1.jl","docs/src",
     execute = true,
     documenter = true,
-    # page already credits julia and Documenter; having an additional credit
-    # does not look nice
+    # We add the credit to Literate.jl the footer
     credit = false,
 )
-# remove datafile
-rm("docs/src/sst.day.mean.2023.nc")
+
+if get(ENV, "CI", "false") == "true"
+    # remove datafile on CI
+    rm("docs/src/sst.day.mean.2023.nc")
+end
 
 makedocs(;
     modules=[CommonDataModel],
