@@ -12,6 +12,7 @@ import Base:
     display,
     filter,
     getindex,
+    in,
     isopen,
     iterate,
     ndims,
