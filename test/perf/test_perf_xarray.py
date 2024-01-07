@@ -17,7 +17,7 @@ def std_no_cache(ds):
     with open("/proc/sys/vm/drop_caches","w") as f:
         f.write("3")
 
-    vm = ds["data"].groupby("time.month").std().to_numpy();
+    vm = ds["data"].groupby("time.month").std(ddof=1).to_numpy();
 
 fname = os.path.expanduser("~/sample_perf2.nc")
 ds = xr.open_dataset(fname)
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     print("  accuracy of mean",
           numpy.sqrt(numpy.mean((mean_ref -  vm)**2)))
 
-    vs = ds["data"].groupby("time.month").std().to_numpy()
+    vs = ds["data"].groupby("time.month").std(ddof=1).to_numpy()
 
 
     print("  accuracy of std",
