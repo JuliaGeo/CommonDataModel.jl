@@ -47,6 +47,7 @@ include("subvariable.jl")
 include("select.jl")
 include("aggregation.jl")
 include("groupby.jl")
+include("rolling.jl")
 
 end # module CommonDataModel
 

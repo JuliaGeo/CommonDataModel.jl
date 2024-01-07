@@ -12,14 +12,6 @@ struct GroupMapping{TClass,TUC} <: AbstractGroupMapping where {TClass <: Abstrac
     unique_class::TUC
 end
 
-struct OverlappingGroupMapping{T,TRC} <: AbstractGroupMapping
-    coord::Vector{T}
-    rolling_classes::Vector{TRC}
-    groupindex_to_dataindex::Vector{Vector{Int}}
-    dataindex_to_groupindex::Vector{Vector{Int}}
-end
-
-
 struct GroupedDataset{TDS,TF,TGM,TM,TRF} <: AbstractDataset
     ds::TDS # dataset
     coordname::Symbol
@@ -46,55 +38,6 @@ struct ReducedGroupedVariable{T,N,TGV,TF}  <: AbstractVariable{T,N}
     reduce_fun::TF
 end
 
-# multiple classes for overlapping groups
-struct MClass{N,TC}
-    class::NTuple{N,TC}
-end
-
-in(item,collection::MClass) = item in collection.class
-
-function OverlappingGroupMapping(coord::AbstractVector{T},rolling_classes) where T
-    # k is data index
-    # ku is the group index
-
-    coord_to_dataindex = Dict{T,Int}()
-
-    for k = 1:length(coord)
-        coord_to_dataindex[coord[k]] = k
-    end
-
-    groupindex_to_dataindex = [Int[] for i in 1:length(rolling_classes)]
-    dataindex_to_groupindex = [Int[] for i in 1:length(coord)]
-
-    for ku = 1:length(rolling_classes)
-        for class in rolling_classes[ku].class
-            k = get(coord_to_dataindex,class,nothing)
-
-            if !isnothing(k)
-                push!(groupindex_to_dataindex[ku],k)
-                push!(dataindex_to_groupindex[k],ku)
-            end
-        end
-    end
-
-    return OverlappingGroupMapping(coord,rolling_classes,groupindex_to_dataindex,dataindex_to_groupindex)
-end
-
-dataindices(gmap::OverlappingGroupMapping,ku) = gmap.groupindex_to_dataindex[ku]
-groupindices(gmap::OverlappingGroupMapping,k) = gmap.dataindex_to_groupindex[k]
-
-ngroups(gmap::OverlappingGroupMapping) = length(gmap.groupindex_to_dataindex)
-ndata(gmap::OverlappingGroupMapping) = length(gmap.dataindex_to_groupindex)
-
-function groupsubset(gmap::OverlappingGroupMapping,kus)
-    OverlappingGroupMapping(gmap.coord,gmap.rolling_classes[kus])
-end
-
-groupsubset(gmap::OverlappingGroupMapping,kus::Colon) = gmap
-
-grouplabel(gmap::OverlappingGroupMapping,ku) = gmap.rolling_classes[ku].class
-
-#--------------
 
 function dataindices(gmap::GroupMapping,ku)
     class_ku = gmap.unique_class[ku]
@@ -402,7 +345,6 @@ monthly_anomalies = data .- mean(gv);
 
 close(ds)
 ```
-
 
 """
 function groupby(v::AbstractVariable,(coordname,group_fun)::Pair{<:SymbolOrString,TF}) where TF
