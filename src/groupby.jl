@@ -92,6 +92,8 @@ end
 
 groupsubset(gmap::OverlappingGroupMapping,kus::Colon) = gmap
 
+grouplabel(gmap::OverlappingGroupMapping,ku) = gmap.rolling_classes[ku].class
+
 #--------------
 
 function dataindices(gmap::GroupMapping,ku)
@@ -99,26 +101,28 @@ function dataindices(gmap::GroupMapping,ku)
     return findall(==(class_ku),gmap.class)
 end
 
-function groupindices(gmap::GroupMapping,k,unique_class=gmap.unique_class)
+function groupindices(gmap::GroupMapping,k)
     # Types like Dates.Month behave different than normal scalars, e.g.
     # julia> length(Dates.Month(1))
     # ERROR: MethodError: no method matching length(::Month)
 
-    if unique_class isa DatePeriod
-        if unique_class == gmap.class[k]
+    if gmap.unique_class isa DatePeriod
+        if gmap.unique_class == gmap.class[k]
             return (1,)
         else
             return ()
         end
     end
 
-    for ku = 1:length(unique_class)
-        if unique_class[ku] == gmap.class[k]
+    for ku = 1:length(gmap.unique_class)
+        if gmap.unique_class[ku] == gmap.class[k]
             return (ku,)
         end
     end
     return ()
 end
+
+grouplabel(gmap::GroupMapping,ku) = gmap.unique_class[ku]
 
 
 # Types like Dates.Month behave different than normal scalars, e.g.
@@ -213,7 +217,7 @@ end
 
 function group(gv::GroupedVariable,ku::Integer)
     # make generic
-    class_ku = gv.groupmap.unique_class[ku]
+    class_ku = grouplabel(gv.groupmap,ku)
     k = dataindices(gv.groupmap,ku)
     return class_ku, k
 end
