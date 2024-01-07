@@ -6,6 +6,13 @@
 
 This package contains abstracts type definition to ensure compatibility of the package [GRIBDatasets](https://github.com/JuliaGeo/GRIBDatasets.jl) and [NCDatasets](https://github.com/Alexander-Barth/NCDatasets.jl) for manipulating GRIB and NetCDF files. This package aims to follow the [Common Data Model](https://docs.unidata.ucar.edu/netcdf-c/current/netcdf_data_model.html) and the [CF (climate and forecast models) Metadata Conventions](https://cfconventions.org/).
 
+Features include:
+* query and edit metadata of arrays and datasets 
+* virtually concatenating multiple files along a given dimension
+* create a virtual subset (`view`) by indices or by values of coordinate variables (`CommonDataModel.select`, `CommonDataModel.@select`)
+* group, map and reduce a variable (`CommonDataModel.groupby`, `CommonDataModel.@groupby`) and rolling reductions like running means `CommonDataModel.rolling`)
+
+
 Here is minimal example for loading GRIB or NetCDF files.
 
 ``` julia
