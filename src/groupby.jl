@@ -483,17 +483,17 @@ function Base.getindex(gr::ReducedGroupedVariable{T,N,TGV,typeof(mean)},indices:
 end
 
 
-function Base.getindex(gr::ReducedGroupedVariable{T,N,TGV,typeof(var)},indices::Union{Integer,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...) where {T,N,TGV}
+function Base.getindex(gr::ReducedGroupedVariable{T,N,TGV,TF},indices::Union{Integer,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...) where TF <: Union{typeof(var),typeof(maximum),typeof(minimum)} where {T,N,TGV}
 
     return _mapreduce_aggregation(
-        gr.gv.map_fun,VarianceWelfordAggegation,gr.gv,indices);
+        gr.gv.map_fun,aggregator(TF),gr.gv,indices);
 end
 
 
 function Base.getindex(gr::ReducedGroupedVariable{T,N,TGV,typeof(std)},indices::Union{Integer,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...) where {T,N,TGV}
 
     return sqrt.(_mapreduce_aggregation(
-        gr.gv.map_fun,VarianceWelfordAggegation,gr.gv,indices))
+        gr.gv.map_fun,VarianceWelfordAggregation,gr.gv,indices))
 end
 
 
