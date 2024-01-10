@@ -119,8 +119,11 @@ function Base.show(io::IO,ds::AbstractDataset)
 end
 
 
+
+_experimental_missing_value(ds::AbstractDataset) = missing
+
 """
-    v = getindex(ds::NCDataset, varname::SymbolOrString)
+    v = getindex(ds::AbstractDataset, varname::SymbolOrString)
 
 Return the variable `varname` in the dataset `ds` as a
 `CFVariable`. The following CF convention are honored when the
@@ -157,7 +160,9 @@ because both variables are related thought the bounds attribute following the CF
 See also [`cfvariable(ds, varname)`](@ref).
 """
 function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
-    return cfvariable(ds, varname)
+    return cfvariable(
+        ds, varname,
+        _experimental_missing_value = _experimental_missing_value(ds))
 end
 
 

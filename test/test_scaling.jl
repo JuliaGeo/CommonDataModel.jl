@@ -3,7 +3,14 @@ using Test
 import CommonDataModel as CDM
 using DataStructures
 using Dates
-import CommonDataModel: AbstractDataset, AbstractVariable, Attributes, Dimensions, fillvalue
+import CommonDataModel:
+    AbstractDataset,
+    AbstractVariable,
+    Attributes,
+    Dimensions,
+    defDim,
+    defVar,
+    fillvalue
 
 fname = tempname()
 ds = MemoryDataset(fname,"c")
@@ -140,10 +147,7 @@ md["data"][1,2] = DateTime(2000,2,1)
 
 @test CDM.dataset(md["data"]) == md
 
-
-
 md.attrib["history"] == "lala"
-
 
 @test haskey(md.attrib,"history")
 
@@ -163,3 +167,26 @@ str = String(take!(io))
 @test_logs (:warn, r".*analysis.*")    CDM.defVar(md,"data2",eltype(data),("lon","lat"), attrib = OrderedDict{String,Any}(    "units" => "days since analysis"));
 
 close(md)
+
+
+
+# Alternative to Missing for NetCDF fillvalue
+
+fname = tempname()
+data = randn(3,4)
+fv = 9999
+data[2,2] = fv
+
+ds = TDS(fname,"c")
+defDim(ds,"lon",size(data,1))
+defDim(ds,"lat",size(data,2))
+ncv = defVar(ds,"data",Float64,("lon","lat"),fillvalue = fv)
+ncv.var[:,:] = data
+
+ds["data"]
+ncv = CDM.cfvariable(ds,"data",_experimental_missing_value = NaN)
+@test eltype(ncv) == Float64
+@test ncv[1,1] == data[1,1]
+@test isnan(ncv[2,2])
+
+close(ds)
