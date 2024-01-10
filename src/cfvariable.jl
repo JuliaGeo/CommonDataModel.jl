@@ -74,7 +74,7 @@ ds = NCDataset("foo.nc");
 
 # 0 is declared as the fill value (add_offset and scale_factor are applied as usual)
 @show cfvariable(ds,"data", fillvalue = 0)[:]
-# return [missing, 11., 12., 13.]
+# returns [missing, 11., 12., 13.]
 
 # Use the time units: days since 2000-01-01
 @show cfvariable(ds,"data", units = "days since 2000-01-01")[:]
