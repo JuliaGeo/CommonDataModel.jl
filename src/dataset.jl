@@ -219,6 +219,13 @@ function varbyattrib(ds::Union{AbstractDataset,AbstractVariable}; kwargs...)
     return varlist
 end
 
+"""
+    var = getindex(ds::Union{AbstractDataset,AbstractVariable},cfname::CFStdName)
+
+Return the NetCDF variable `var` with the standard name `cfname` from a
+dataset. If the first argument is a variable, then the search is limited to
+all variables with the same dimension names.
+"""
 function Base.getindex(ds::Union{AbstractDataset,AbstractVariable},n::CFStdName)
     ncvars = varbyattrib(ds, standard_name = String(n.name))
     if length(ncvars) == 1
@@ -228,7 +235,27 @@ function Base.getindex(ds::Union{AbstractDataset,AbstractVariable},n::CFStdName)
     end
 end
 
+"""
+    names = keys(g::Groups)
+
+Return the names of all subgroubs of the group `g`.
+"""
 Base.keys(groups::Groups) = groupnames(groups.ds)
+
+"""
+    group = getindex(g::Groups,groupname::AbstractString)
+
+Return the NetCDF `group` with the name `groupname` from the parent
+group `g`.
+
+For example:
+
+```julia
+ds = NCDataset("results.nc", "r");
+forecast_group = ds.group["forecast"]
+forecast_temp = forecast_group["temperature"]
+```
+"""
 Base.getindex(groups::Groups,name) = group(groups.ds,name)
 
 

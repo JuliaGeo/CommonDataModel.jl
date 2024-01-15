@@ -184,9 +184,10 @@ if we have a time series of temperature and salinity, the temperature values
 can also be selected based on salinity:
 
 ```julia
-# create a sample time series
 using NCDatasets, Dates
+using CommonDataModel: @select
 fname = "sample_series.nc"
+# create a sample time series
 time = DateTime(2000,1,1):Day(1):DateTime(2009,12,31)
 salinity = randn(length(time)) .+ 35
 temperature = randn(length(time))
@@ -202,10 +203,11 @@ ds = NCDataset(fname)
 # load all temperature data from January where the salinity is larger than 35.
 v = @select(ds["temperature"],Dates.month(time) == 1 && salinity >= 35)
 
-# this is equivalent to
+# this is equivalent to:
 v2 = ds["temperature"][findall(Dates.month.(time) .== 1 .&& salinity .>= 35)]
 
-@test v == v2
+v == v2
+# returns true
 close(ds)
 ```
 
