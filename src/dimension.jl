@@ -85,13 +85,47 @@ function show_dim(io::IO, d)
     end
 end
 
+"""
+    keys(d::Dimensions)
 
+Return a list of all dimension names in NCDataset `ds`.
 
+# Examples
+
+```julia
+ds = NCDataset("results.nc", "r");
+dimnames = keys(ds.dim)
+```
+"""
 Base.keys(dims::Dimensions) = dimnames(dims.ds)
+
+
 Base.getindex(dims::Dimensions,name) = dim(dims.ds,name)
+
+
+"""
+    setindex!(d::Dimensions,len,name::AbstractString)
+
+Defines the dimension called `name` to the length `len`, for example:
+
+```julia
+ds = NCDataset("file.nc","c")
+ds.dim["longitude"] = 100
+```
+
+If `len` is the special value `Inf`, then the dimension is considered as
+`unlimited`, i.e. it will grow as data is added to the NetCDF file.
+"""
 Base.setindex!(dims::Dimensions,data,name) = defDim(dims.ds,name,data)
+
+
 Base.show(io::IO,dims::Dimensions) = show_dim(io,dims)
 
+"""
+    unlimited(d::Dimensions)
+
+Return the names of all unlimited dimensions.
+"""
 unlimited(dims::Dimensions) = unlimited(dims.ds)
 
 

@@ -4,7 +4,7 @@ keywords = ["netcdf", "GRIB", "climate and forecast conventions", "oceanography"
 license = "MIT"
 desc = "CommonDataModel is a module that defines types common to NetCDF and GRIB data"
 authors = ["Alexander Barth <barth.alexander@gmail.com>"]
-version = "0.3.2"
+version = "0.3.3"
 
 [deps]
 CFTime = "179af706-886a-5703-950a-314cd64e0468"
