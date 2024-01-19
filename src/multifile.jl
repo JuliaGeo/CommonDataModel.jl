@@ -251,6 +251,7 @@ end
 
 """
     storage,chunksizes = chunking(v::MFVariable)
+    storage,chunksizes = chunking(v::MFCFVariable)
 
 Return the storage type (`:contiguous` or `:chunked`) and the chunk sizes of the varable
 `v` corresponding to the first file. If the first file in the collection
@@ -268,5 +269,8 @@ function chunking(v::MFVariable)
 end
 
 deflate(v::MFVariable) = deflate(v.ds.ds[1][name(v)])
-
 checksum(v::MFVariable) = checksum(v.ds.ds[1][name(v)])
+
+chunking(v::MFCFVariable) = chunking(v.var)
+deflate(v::MFCFVariable) = deflate(v.var)
+checksum(v::MFCFVariable) = checksum(v.var)
