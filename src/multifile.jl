@@ -254,13 +254,14 @@ end
 
 Return the storage type (`:contiguous` or `:chunked`) and the chunk sizes of the varable
 `v` corresponding to the first file. If the first file in the collection
-is chunked then this storage attributes are returns. If not the first file is not contiguous, then multi-file variable is still reported as chunked with chunk size equal to the variable size.
+is chunked then this storage attributes are returned. If not the first file is not contiguous, then multi-file variable is still reported as chunked with chunk size equal to the size of the first variable.
 """
 function chunking(v::MFVariable)
-    storage,chunksizes = chunking(v.ds.ds[1][name(v)])
+    v1 = v.ds.ds[1][name(v)]
+    storage,chunksizes = chunking(v1)
 
-    if chunksizes == :contiguous
-        return (:chunked, collect(size(v)))
+    if storage == :contiguous
+        return (:chunked, size(v1))
     else
         return storage,chunksizes
     end

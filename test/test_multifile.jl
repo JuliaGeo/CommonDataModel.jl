@@ -195,7 +195,7 @@ mfds.attrib["new"] = "attrib"
 
 @test name(parentdataset(mfds.group["group"])) == "/"
 
-@test chunking(mfds[varname]) == (:contiguous, (2, 3, 3))
+@test chunking(mfds[varname]) == (:chunked, (2, 3, 1))
 @test deflate(mfds[varname]) == (false, false, 0)
 @test checksum(mfds[varname]) == :nochecksum
 
