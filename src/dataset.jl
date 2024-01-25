@@ -120,7 +120,7 @@ end
 
 
 
-_experimental_missing_value(ds::AbstractDataset) = missing
+maskingvalue(ds::AbstractDataset) = missing
 
 """
     v = getindex(ds::AbstractDataset, varname::SymbolOrString)
@@ -160,9 +160,7 @@ because both variables are related thought the bounds attribute following the CF
 See also [`cfvariable(ds, varname)`](@ref).
 """
 function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
-    return cfvariable(
-        ds, varname,
-        _experimental_missing_value = _experimental_missing_value(ds))
+    return cfvariable(ds, varname)
 end
 
 

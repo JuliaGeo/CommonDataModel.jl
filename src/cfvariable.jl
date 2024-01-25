@@ -101,7 +101,7 @@ function cfvariable(ds,
                     # look also at parent if defined
                     units = _getattrib(ds,_v,_parentname,"units",nothing),
                     calendar = _getattrib(ds,_v,_parentname,"calendar",nothing),
-                    _experimental_missing_value = missing,
+                    maskingvalue = maskingvalue(ds),
                     )
 
     v = _v
@@ -155,13 +155,13 @@ function cfvariable(ds,
         end
     end
 
-    __experimental_missing_value =
+    _maskingvalue =
         # use NaN32 rather than NaN to avoid unnecessary promotion
         # to double precision
-        if scaledtype == Float32 && _experimental_missing_value === NaN
+        if scaledtype == Float32 && maskingvalue === NaN
             NaN32
         end
-    __experimental_missing_value = _experimental_missing_value
+    _maskingvalue = maskingvalue
 
 
     storage_attrib = (
@@ -172,11 +172,11 @@ function cfvariable(ds,
         calendar = calendar,
         time_origin = time_origin,
         time_factor = time_factor,
-        _experimental_missing_value = __experimental_missing_value,
+        maskingvalue = _maskingvalue,
     )
 
     rettype = _get_rettype(ds, calendar, fillvalue, missing_value,
-                           scaledtype,__experimental_missing_value)
+                           scaledtype,_maskingvalue)
 
     return CFVariable{rettype,ndims(v),typeof(v),typeof(attrib),typeof(storage_attrib)}(
         v,attrib,storage_attrib)
@@ -184,7 +184,7 @@ function cfvariable(ds,
 end
 
 
-function _get_rettype(ds, calendar, fillvalue, missing_value, rettype, _experimental_missing_value)
+function _get_rettype(ds, calendar, fillvalue, missing_value, rettype, maskingvalue)
     # rettype can be a date if calendar is different from nothing
     if calendar !== nothing
         DT = nothing
@@ -205,8 +205,7 @@ function _get_rettype(ds, calendar, fillvalue, missing_value, rettype, _experime
     end
 
     if (fillvalue !== nothing) || (!isempty(missing_value))
-        #rettype = Union{Missing,rettype}
-        rettype = promote_type(typeof(_experimental_missing_value),rettype)
+        rettype = promote_type(typeof(maskingvalue),rettype)
     end
     return rettype
 end
@@ -239,7 +238,7 @@ The result can also be `nothing` if the variable has no time units.
 """
 time_factor(v::CFVariable) = v._storage_attrib.time_factor
 
-_experimental_missing_value(v::CFVariable) = v._storage_attrib._experimental_missing_value
+maskingvalue(v::CFVariable) = v._storage_attrib.maskingvalue
 
 # fillvalue can be NaN (unfortunately)
 @inline isfillvalue(data,fillvalue) = data == fillvalue
@@ -288,43 +287,55 @@ end
 @inline fromdate(data,time_origin,time_factor) = data
 
 
-@inline CFtransform_experimental_missing_value(data,_experimental_missing_value) = data
-@inline CFtransform_experimental_missing_value(data::Missing,_experimental_missing_value) = _experimental_missing_value
+@inline CFtransformmaskingvalue(data,maskingvalue) = data
+@inline CFtransformmaskingvalue(data::Missing,maskingvalue) = maskingvalue
 
-@inline CFinvtransform_experimental_missing_value(data::Missing,_experimental_missing_value::Missing) = missing
-@inline CFinvtransform_experimental_missing_value(data,_experimental_missing_value::Missing) = data
+@inline CFinvtransformmaskingvalue(data,maskingvalue::Missing) = data
 
-# fall-back if _experimental_missing_value is not missing
-@inline function CFinvtransform_experimental_missing_value(data,_experimental_missing_value)
-    # note NaN === NaN is true
-    if data === _experimental_missing_value
+# fall-back if maskingvalue is not missing
+# for numbers we use == (rather ===) so that 40 == 40. is true
+# but we need to double check for NaNs
+@inline function CFinvtransformmaskingvalue(data::Number,maskingvalue::Number)
+    if (data == maskingvalue) || (isnan(maskingvalue) && isnan(data))
         return missing
     else
         data
     end
 end
 
+# if maskingvalue is not a number e.g. nothing, isnan is not defined
+@inline function CFinvtransformmaskingvalue(data,maskingvalue)
+    if data === maskingvalue
+        return missing
+    else
+        data
+    end
+end
+
+
+
 # Transformation pipelne
 #
-# fillvalue to missing -> scale -> add offset -> transform to dates -> missing to alternative sentinel value
+# fillvalue to missing -> scale -> add offset -> transform to dates -> missing to maskingvalue (alternative sentinel value)
 #
 # Inverse transformation pipleine
 #
-# alternative sentinel value to missing -> round float if should be ints -> encode dates -> remove offset -> inverse scalling -> missing to fillvalue
+# maskingvalue to missing -> round float if should be ints -> encode dates -> remove offset -> inverse scalling -> missing to fillvalue
 #
 # All steps are optional and can be skipped if not applicable
 
 
-@inline function CFtransform(data,fv,scale_factor,add_offset,time_origin,time_factor,_experimental_missing_value,DTcast)
-    return CFtransform_experimental_missing_value(
-    asdate(
-        CFtransform_offset(
-            CFtransform_scale(
-                CFtransform_missing(data,fv),
-                scale_factor),
-            add_offset),
-        time_origin,time_factor,DTcast),
-    _experimental_missing_value)
+@inline function CFtransform(data,fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue,DTcast)
+    return CFtransformmaskingvalue(
+        asdate(
+            CFtransform_offset(
+                CFtransform_scale(
+                    CFtransform_missing(
+                        data,fv),
+                    scale_factor),
+                add_offset),
+            time_origin,time_factor,DTcast),
+        maskingvalue)
 end
 
 # round float to integers
@@ -332,18 +343,19 @@ _approximate(::Type{T},data) where T <: Integer = round(T,data)
 _approximate(::Type,data) = data
 
 
-@inline function CFinvtransform(data,fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,_experimental_missing_value,DT)
-    return CFtransform_experimental_missing_value(
-    _approximate(
+@inline function CFinvtransform(data,fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,maskingvalue,DT)
+    return _approximate(
         DT,
         CFtransform_replace_missing(
             CFtransform_scale(
                 CFtransform_offset(
-                    fromdate(data,time_origin,inv_time_factor),
+                    fromdate(
+                        CFinvtransformmaskingvalue(
+                            data,maskingvalue),
+                        time_origin,inv_time_factor),
                     minus_offset),
                 inv_scale_factor),
-            fv)),
-    _experimental_missing_value)
+            fv))
 end
 
 
@@ -354,27 +366,27 @@ end
 #    CFtransform.(data,fv,scale_factor,add_offset,time_origin,time_factor,DTcast)
 
 # for scalars
-@inline CFtransformdata(data,fv,scale_factor,add_offset,time_origin,time_factor,_experimental_missing_value,DTcast) =
-    CFtransform(data,fv,scale_factor,add_offset,time_origin,time_factor,_experimental_missing_value,DTcast)
+@inline CFtransformdata(data,fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue,DTcast) =
+    CFtransform(data,fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue,DTcast)
 
 # in-place version
-@inline function CFtransformdata!(out,data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,_experimental_missing_value) where {T,N}
+@inline function CFtransformdata!(out,data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue) where {T,N}
     DTcast = eltype(out)
     @inbounds @simd for i in eachindex(data)
-        out[i] = CFtransform(data[i],fv,scale_factor,add_offset,time_origin,time_factor,_experimental_missing_value,DTcast)
+        out[i] = CFtransform(data[i],fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue,DTcast)
     end
     return out
 end
 
 # for arrays
-@inline function CFtransformdata(data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,_experimental_missing_value,DTcast) where {T,N}
+@inline function CFtransformdata(data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue,DTcast) where {T,N}
     out = Array{DTcast,N}(undef,size(data))
-    return CFtransformdata!(out,data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,_experimental_missing_value)
+    return CFtransformdata!(out,data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue)
 end
 
 @inline function CFtransformdata(
     data::AbstractArray{T,N},fv::Tuple{},scale_factor::Nothing,
-    add_offset::Nothing,time_origin::Nothing,time_factor::Nothing,_experimental_missing_value,::Type{T}) where {T,N}
+    add_offset::Nothing,time_origin::Nothing,time_factor::Nothing,maskingvalue,::Type{T}) where {T,N}
     # no transformation necessary (avoid allocation)
     return data
 end
@@ -394,32 +406,32 @@ end
 # end
 
 # for arrays
-@inline function CFinvtransformdata(data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,_experimental_missing_value,DT) where {T,N}
+@inline function CFinvtransformdata(data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue,DT) where {T,N}
     inv_scale_factor = _inv(scale_factor)
     minus_offset = _minus(add_offset)
     inv_time_factor = _inv(time_factor)
 
     out = Array{DT,N}(undef,size(data))
     @inbounds @simd for i in eachindex(data)
-        out[i] = CFinvtransform(data[i],fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,_experimental_missing_value,DT)
+        out[i] = CFinvtransform(data[i],fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,maskingvalue,DT)
     end
     return out
 end
 
 @inline function CFinvtransformdata(
     data::AbstractArray{T,N},fv::Tuple{},scale_factor::Nothing,
-    add_offset::Nothing,time_origin::Nothing,time_factor::Nothing,_experimental_missing_value,::Type{T}) where {T,N}
+    add_offset::Nothing,time_origin::Nothing,time_factor::Nothing,maskingvalue,::Type{T}) where {T,N}
     # no transformation necessary (avoid allocation)
     return data
 end
 
 # for scalar
-@inline function CFinvtransformdata(data,fv,scale_factor,add_offset,time_origin,time_factor,_experimental_missing_value,DT)
+@inline function CFinvtransformdata(data,fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue,DT)
     inv_scale_factor = _inv(scale_factor)
     minus_offset = _minus(add_offset)
     inv_time_factor = _inv(time_factor)
 
-    return CFinvtransform(data,fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,_experimental_missing_value,DT)
+    return CFinvtransform(data,fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,maskingvalue,DT)
 end
 
 
@@ -433,7 +445,7 @@ end
 function Base.getindex(v::CFVariable, indexes::Union{Integer,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...)
     data = v.var[indexes...]
     return CFtransformdata(data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
-                           time_origin(v),time_factor(v),_experimental_missing_value(v),eltype(v))
+                           time_origin(v),time_factor(v),maskingvalue(v),eltype(v))
 end
 
 function Base.setindex!(v::CFVariable,data::Array{Missing,N},indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where N
@@ -452,7 +464,7 @@ function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{I
         v.var[indexes...] = CFinvtransformdata(
             data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
             time_origin(v),time_factor(v),
-            _experimental_missing_value(v),
+            maskingvalue(v),
             eltype(v.var))
         return data
     end
@@ -466,7 +478,7 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,AbstractRang
         data,fill_and_missing_values(v),
         scale_factor(v),add_offset(v),
         time_origin(v),time_factor(v),
-        _experimental_missing_value(v),
+        maskingvalue(v),
         eltype(v.var))
 
     return data
@@ -599,6 +611,6 @@ close(ds)
         fmv = fill_and_missing_values(v)
         return CFtransformdata!(data,buffer,fmv,scale_factor(v),add_offset(v),
                                 time_origin(v),time_factor(v),
-                                _experimental_missing_value(v))
+                                maskingvalue(v))
     end
 end

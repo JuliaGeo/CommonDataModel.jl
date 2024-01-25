@@ -66,26 +66,31 @@ Default fill-value for the given type from NetCDF.
 
 
 
-# data has the type e.g. Array{Union{Missing,Float64},3}
-function defVar(ds::AbstractDataset,
-                name::SymbolOrString,
-                data::AbstractArray{Union{Missing,T},N},
-                dimnames;
-                kwargs...) where T <: Union{Int8,UInt8,Int16,Int32,Int64,Float32,Float64,Char,String} where N
-    _defVar(ds::AbstractDataset,name,data,T,dimnames; kwargs...)
+# convert e.g. Union{Float64,Missing} to Float64
+# similar to Base.nonmissingtype
+_nonuniontype(::Type{T},::Type{Union{T,S}}) where {T,S} = S
+function nonuniontype(T,TS)
+    if typeof(TS) == Union
+        _nonuniontype(T,TS)
+    else
+        TS
+    end
 end
 
-# data has the type e.g. Vector{DateTime}, Array{Union{Missing,DateTime},3} or
-# Vector{DateTime360Day}
-# Data is always stored as Float64 in the file
 function defVar(ds::AbstractDataset,
                 name::SymbolOrString,
-                data::AbstractArray{<:Union{Missing,T},N},
+                data::AbstractArray{T,N},
                 dimnames;
-                kwargs...) where T <: Union{DateTime,AbstractCFDateTime} where N
-    _defVar(ds,name,data,Float64,dimnames; kwargs...)
+                kwargs...) where {T,N}
+
+    Tmaskingvalue = typeof(maskingvalue(ds))
+
+    # convert e.g. Union{Float64,Missing} or Union{Float64,Nothing} to Float64
+    nctype = nonuniontype(Tmaskingvalue,T)
+    _defVar(ds,name,data,nctype,dimnames; kwargs...)
 end
 
+# defining a scalar
 function defVar(ds::AbstractDataset,name::SymbolOrString,data,dimnames; kwargs...)
     # eltype of a String would be Char
     if data isa String
@@ -93,7 +98,6 @@ function defVar(ds::AbstractDataset,name::SymbolOrString,data,dimnames; kwargs..
     else
         nctype = eltype(data)
     end
-
     _defVar(ds,name,data,nctype,dimnames; kwargs...)
 end
 
@@ -101,7 +105,12 @@ end
 as_dict(x::NamedTuple) = OrderedDict(zip(keys(x),values(x)))
 as_dict(x) = OrderedDict(x)
 
+function _defVar(ds::AbstractDataset,name::SymbolOrString,data,::Type{<:Union{DateTime,AbstractCFDateTime}},vardimnames; kwargs...)
+    _defVar(ds,name,data,Float64,vardimnames; kwargs...)
+end
+
 function _defVar(ds::AbstractDataset,name::SymbolOrString,data,nctype,vardimnames; attrib = [], kwargs...)
+
     # define the dimensions if necessary
     for (i,dimname) in enumerate(String.(vardimnames))
         if !(dimname in dimnames(ds))
@@ -118,28 +127,31 @@ function _defVar(ds::AbstractDataset,name::SymbolOrString,data,nctype,vardimname
     end
 
     T = eltype(data)
+    Tmaskingvalue = typeof(maskingvalue(ds))
+
     # we should preserve the order
     # value type is promoted to Any as we add values of different type
     attrib = convert(OrderedDict{SymbolOrString,Any},as_dict(attrib))
 
-    if T <: Union{TimeType,Missing}
+    Tnonunion = nonuniontype(Tmaskingvalue,T)
+    if Tnonunion <: TimeType
         if !haskey(attrib,"units")
             push!(attrib,"units" => CFTime.DEFAULT_TIME_UNITS)
         end
         if !haskey(attrib,"calendar")
             # these dates cannot be converted to the standard calendar
-            if T <: Union{DateTime360Day,Missing}
+            if T <: Union{DateTime360Day,Tmaskingvalue}
                 push!(attrib,"calendar" => "360_day")
-            elseif T <: Union{DateTimeNoLeap,Missing}
+            elseif T <: Union{DateTimeNoLeap,Tmaskingvalue}
                 push!(attrib,"calendar" => "365_day")
-            elseif T <: Union{DateTimeAllLeap,Missing}
+            elseif T <: Union{DateTimeAllLeap,Tmaskingvalue}
                 push!(attrib,"calendar" => "366_day")
             end
         end
     end
 
     # make sure a fill value is set
-    if (Missing <: T) && !haskey(attrib,"_FillValue") &&
+    if (Tmaskingvalue <: T) && !haskey(attrib,"_FillValue") &&
         !haskey(kwargs,:fillvalue)
         push!(attrib,"_FillValue" => fillvalue(nctype))
     end
@@ -159,6 +171,7 @@ function _defVar(ds::AbstractDataset,name::SymbolOrString,data,nctype,vardimname
 end
 
 
+# dimension names can be ommited for scalars
 function defVar(ds::AbstractDataset,name,data::T; kwargs...) where T <: Union{Number,String,Char}
     v = defVar(ds,name,T,(); kwargs...)
     v[] = data

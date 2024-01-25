@@ -2,7 +2,7 @@ import Base: size, getindex, setindex!, checkbounds
 import CommonDataModel as CDM
 #import CommonDataModel: SymbolOrString
 using DataStructures
-import CommonDataModel: defVar, unlimited, name, dimnames, dataset, variable, dim, attribnames, attrib, defDim, defAttrib, delAttrib, MFDataset, iswritable, SymbolOrString, parentdataset, load!
+import CommonDataModel: defVar, unlimited, name, dimnames, dataset, variable, dim, attribnames, attrib, defDim, defAttrib, delAttrib, MFDataset, iswritable, SymbolOrString, parentdataset, load!, maskingvalue
 
 mutable struct ResizableArray{T,N} <: AbstractArray{T,N}
     A::AbstractArray{T,N}
@@ -17,7 +17,7 @@ struct MemoryVariable{T,N,TP,TA <: AbstractArray{T,N}} <: CDM.AbstractVariable{T
     _attrib::OrderedDict{String,Any}
 end
 
-struct MemoryDataset{TP} <: CDM.AbstractDataset
+struct MemoryDataset{TP,Tmasingvalue} <: CDM.AbstractDataset
     parent_dataset::TP
     name::String # "/" for root group
     dimensions::OrderedDict{String,Int}
@@ -25,6 +25,7 @@ struct MemoryDataset{TP} <: CDM.AbstractDataset
     _attrib::OrderedDict{String,Any}
     unlimited::Vector{String}
     _group::OrderedDict{String,Any}
+    maskingvalue::Tmasingvalue
 end
 
 Base.size(RA::ResizableArray) = size(RA.A)
@@ -103,7 +104,7 @@ Base.keys(md::MemoryDataset) = keys(md.variables)
 Base.haskey(md::MemoryDataset,varname::SymbolOrString) = haskey(md.variables,String(varname))
 CDM.variable(md::MemoryDataset,varname::SymbolOrString) = md.variables[String(varname)]
 CDM.dimnames(md::MemoryDataset) = keys(md.dimensions)
-
+CDM.maskingvalue(md::MemoryDataset) = md.maskingvalue
 
 function CDM.unlimited(md::MemoryDataset)
     ul = md.unlimited
@@ -208,7 +209,9 @@ CDM.parentdataset(md::MemoryDataset) = md.parent_dataset
 CDM.iswritable(md::MemoryDataset) = true
 
 function MemoryDataset(; parent_dataset = nothing, name = "/",
-                       attrib = OrderedDict{String,Any}())
+                       attrib = OrderedDict{String,Any}(),
+                       maskingvalue = missing
+                       )
     return MemoryDataset(
         parent_dataset,
         name,
@@ -217,6 +220,7 @@ function MemoryDataset(; parent_dataset = nothing, name = "/",
         OrderedDict{String,Any}(attrib),
         String[],
         OrderedDict{String,Any}(),
+        maskingvalue
     )
 end
 
