@@ -150,9 +150,12 @@ function _defVar(ds::AbstractDataset,name::SymbolOrString,data,nctype,vardimname
         end
     end
 
-    # make sure a fill value is set
+    maskingvalue_nan = maskingvalue(ds) isa Number && isnan(maskingvalue(ds))
+
+    # make sure a fill value is set if we deduce from the type of data
+    # that it is needed
     if (Tmaskingvalue <: T) && !haskey(attrib,"_FillValue") &&
-        !haskey(kwargs,:fillvalue)
+        !haskey(kwargs,:fillvalue) && !maskingvalue_nan
         push!(attrib,"_FillValue" => fillvalue(nctype))
     end
 

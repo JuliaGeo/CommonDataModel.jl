@@ -261,3 +261,11 @@ end
 
 @test nonuniontype(Missing,Union{Float64,Missing}) == Float64
 @test nonuniontype(Missing,Union{Missing,Float64}) == Float64
+
+
+
+fname = tempname()
+data = rand(4,5)
+ds = TDS(fname,"c", maskingvalue = NaN)
+ncv = defVar(ds,"data",data,("lon","lat"))
+@test !haskey(ncv.attrib,"_FillValue")

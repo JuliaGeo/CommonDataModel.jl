@@ -133,10 +133,6 @@ function CDM.dim(md::MemoryDataset,name::SymbolOrString)
 end
 
 CDM.varnames(ds::MemoryDataset) = collect(keys(ds.variables))
-
-CDM.variable(ds::MemoryDataset,variablename::SymbolOrString) = ds.variables[String(variablename)]
-
-
 CDM.attribnames(md::Union{MemoryDataset,MemoryVariable}) = keys(md._attrib)
 CDM.attrib(md::Union{MemoryDataset,MemoryVariable},name::SymbolOrString) = md._attrib[String(name)]
 
