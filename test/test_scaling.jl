@@ -227,7 +227,7 @@ for Tbase in (UInt8, Int8, Float32, Float64, Int64, Char, String)
 
         if Tbase == String
             data[:,:] = rand(string.('a':'z'),size(data))
-            fv = "z"
+            fv = "X"
         else
             data[:,:] = rand(Tbase(0):Tbase(10),size(data))
             fv = Tbase(99)
