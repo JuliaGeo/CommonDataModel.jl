@@ -71,7 +71,18 @@ Default fill-value for the given type from NetCDF.
 _nonuniontype(::Type{T},::Type{Union{T,S}}) where {T,S} = S
 function nonuniontype(T,TS)
     if typeof(TS) == Union
-        _nonuniontype(T,TS)
+        # https://github.com/JuliaLang/julia/issues/53136
+        @static if (VERSION < v"1.8") && Sys.iswindows()
+            if TS.a == T
+               return TS.b
+            elseif TS.b == T
+               return TS.a
+            else
+               return TS
+            end
+         else
+            _nonuniontype(T,TS)
+         end
     else
         TS
     end
