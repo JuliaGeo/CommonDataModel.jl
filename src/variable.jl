@@ -65,24 +65,27 @@ Default fill-value for the given type from NetCDF.
 @inline fillvalue(::Type{String})  = ""
 
 
+# based on:
+# https://github.com/JuliaLang/julia/blob/94fd312df03d5075796fbd2e8b47288a84a1c6de/base/promotion.jl#L141
+# MIT
+# typesplit(Union{Float64,Missing},Missing) == Float64
+function typesplit(@nospecialize(TS), @nospecialize(T))
+    if TS <: T
+        return Union{}
+    end
+    if isa(TS, Union)
+        return Union{typesplit(TS.a, T),
+                     typesplit(TS.b, T)}
+    end
+    return TS
+end
 
 # convert e.g. Union{Float64,Missing} to Float64
 # similar to Base.nonmissingtype
-_nonuniontype(::Type{T},::Type{Union{T,S}}) where {T,S} = S
+
 function nonuniontype(T,TS)
     if typeof(TS) == Union
-        # https://github.com/JuliaLang/julia/issues/53136
-        @static if (VERSION < v"1.8") && Sys.iswindows()
-            if TS.a == T
-               return TS.b
-            elseif TS.b == T
-               return TS.a
-            else
-               return TS
-            end
-         else
-            _nonuniontype(T,TS)
-         end
+        return typesplit(TS, T)
     else
         TS
     end
