@@ -118,6 +118,11 @@ gd = groupby(ds[:data],:time => Dates.Month)
 month_sum = sum(gd);
 @test month_sum[:,:,:] == d_sum
 
+# group dataset
+gds = sum(groupby(ds,:time => Dates.Month))
+@test gds["data"][:,:,:] == d_sum
+@test gds["lon"][:] == ds["lon"][:]
+@test gds["lat"][:] == ds["lat"][:]
 
 
 gr = month_sum
@@ -203,7 +208,8 @@ gr2 = mean(@groupby(ds["data2"],Dates.Month(time)))
 @test gds["lon"][:] == 1:size(data,1)
 io = IOBuffer()
 show(io,"text/plain",gr)
-@test occursin("array", String(take!(io)))
+#@test occursin("array", String(take!(io)))
+@test occursin("Dimensions", String(take!(io)))
 
 io = IOBuffer()
 show(io,"text/plain",gv)
