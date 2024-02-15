@@ -101,7 +101,6 @@ CDM.dimnames(v::MemoryVariable) = v.dimnames
 CDM.dataset(v::MemoryVariable) = v.parent_dataset
 
 Base.keys(md::MemoryDataset) = keys(md.variables)
-Base.haskey(md::MemoryDataset,varname::SymbolOrString) = haskey(md.variables,String(varname))
 CDM.variable(md::MemoryDataset,varname::SymbolOrString) = md.variables[String(varname)]
 CDM.dimnames(md::MemoryDataset) = keys(md.dimensions)
 CDM.maskingvalue(md::MemoryDataset) = md.maskingvalue

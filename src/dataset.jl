@@ -169,6 +169,10 @@ function Base.setindex!(ds::AbstractDataset,data::AbstractVariable,varname::Symb
 end
 
 
+function Base.haskey(ds::AbstractDataset,varname::SymbolOrString)
+    return Symbol(varname) in Symbol.(keys(ds))
+end
+
 """
     varbyattrib(ds, attname = attval)
 

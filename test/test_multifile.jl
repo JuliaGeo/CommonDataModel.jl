@@ -3,7 +3,19 @@ using Test
 import CommonDataModel as CDM
 using DataStructures
 using Dates
-import CommonDataModel: AbstractDataset, AbstractVariable, Attributes, Dimensions, CatArrays, defGroup, sync, chunking, deflate, checksum
+import CommonDataModel:
+    @CF_str,
+    AbstractDataset,
+    AbstractVariable,
+    Attributes,
+    CatArrays,
+    Dimensions,
+    checksum,
+    chunking,
+    defGroup,
+    deflate,
+    fillvalue,
+    sync
 
 function example_file(TDS,i,array, fname = tempname();
     varname = "var")
@@ -126,6 +138,8 @@ for deferopen in (false,true)
     local buf, ds_merged, fname_merged, var
 
     mfds = TDS(fnames, deferopen = deferopen);
+
+    @test haskey(mfds,varname)
     var = variable(mfds,varname);
     data = var[:,:,:]
     @test C == var[:,:,:]
