@@ -40,7 +40,8 @@ close(ds)
 
  Most users would typically import [`GRIBDatasets`](https://github.com/JuliaGeo/GRIBDatasets.jl) and [`NCDatasets`](https://github.com/Alexander-Barth/NCDatasets.jl) directly and not `CommonDataModel`. One should import `CommonDataModel` only to extent the functionality of `GRIBDatasets` and `NCDatasets`.
 
-As a proof-of-concept, there is also an [`TIFFDatasets`](https://github.com/Alexander-Barth/TIFFDatasets.jl) package for GeoTIFF files.
+There is also an [`TIFFDatasets`](https://github.com/Alexander-Barth/TIFFDatasets.jl) package for GeoTIFF files and 
+[`ZarrDatasets`](https://github.com/JuliaGeo/ZarrDatasets.jl) package for Zarr datasets.
 
 # File conversions
 
