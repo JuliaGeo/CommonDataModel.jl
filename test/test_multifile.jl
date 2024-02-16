@@ -132,10 +132,11 @@ fnames = example_file.(TDS,1:3,A)
 
 varname = "var"
 
+#deferopen = false
 for deferopen in (false,true)
     local mfds, data
     local lon
-    local buf, ds_merged, fname_merged, var
+    local buf, ds_merged, fname_merged, var, ncv
 
     mfds = TDS(fnames, deferopen = deferopen);
 
@@ -184,14 +185,13 @@ for deferopen in (false,true)
     @test mfds["lon"][1:1] == ds_merged["lon"][:]
     close(ds_merged)
 
-#=
-    # save subset of aggregated file (deprecated)
-    fname_merged = tempname()
-    write(fname_merged,mfds,idimensions = Dict("lon" => 1:1))
-    ds_merged = TDS(fname_merged)
-    @test mfds["lon"][1:1] == ds_merged["lon"][:]
-    close(ds_merged)
-=#
+
+    # in-place load
+    ncv = mfds[varname].var
+    buffer = zeros(eltype(ncv),size(ncv))
+    load!(ncv,buffer,:,:,:)
+    @test buffer == C
+
     # show
     buf = IOBuffer()
     show(buf,mfds)

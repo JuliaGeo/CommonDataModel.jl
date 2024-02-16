@@ -74,28 +74,42 @@ function CatArray(dim::Int,arrays...)
         sz)
 end
 
+function load!(CA::CatArray{T,N},B,idx...) where {T,N}
+    idx_global_local = index_global_local(CA,idx)
+
+    for (array,(idx_global,idx_local)) in zip(CA.arrays,idx_global_local)
+        if valid_local_idx(idx_local...)
+            # get subset from subarray
+            subset = @view array[idx_local...]
+            B[idx_global...] .= subset
+        end
+    end
+
+    return B
+end
+
+function Base.getindex(CA::CatArray{T,N},idx::Integer...) where {T,N}
+    checkbounds(CA,idx...)
+    idx_global_local = index_global_local(CA,idx)
+    B = Ref{T}()
+
+    for (array,(idx_global,idx_local)) in zip(CA.arrays,idx_global_local)
+        if valid_local_idx(idx_local...)
+            B[] = array[idx_local...]
+        end
+    end
+
+    return B[]
+end
 
 function Base.getindex(CA::CatArray{T,N},idx...) where {T,N}
     checkbounds(CA,idx...)
 
     sz = _shape_after_slice(size(CA),idx...)
-    idx_global_local = index_global_local(CA,idx)
     B = Array{T,length(sz)}(undef,sz...)
 
-    for (array,(idx_global,idx_local)) in zip(CA.arrays,idx_global_local)
-        if valid_local_idx(idx_local...)
-            # get subset from subarray
-            subset = array[idx_local...]
-            B[idx_global...] = subset
-        end
-    end
-
-    if sz == ()
-        # scalar
-        return B[]
-    else
-        return B
-    end
+    load!(CA,B,idx...)
+    return B
 end
 
 Base.size(CA::CatArray) = CA.sz

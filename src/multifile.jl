@@ -160,6 +160,9 @@ end
 Base.getindex(v::MFVariable,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) = getindex(v.var,indexes...)
 Base.setindex!(v::MFVariable,data,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) = setindex!(v.var,data,indexes...)
 
+
+load!(v::MFVariable,buffer,indexes...) = CatArrays.load!(v.var,buffer,indexes...)
+
 Base.size(v::MFVariable) = size(v.var)
 Base.size(v::MFCFVariable) = size(v.var)
 dimnames(v::MFVariable) = v.dimnames
