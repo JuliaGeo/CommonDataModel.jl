@@ -17,7 +17,14 @@ only a single group, this will be always the root group `"/"`.
 """
 name(ds::AbstractDataset) = "/"
 
+"""
+    pds = CommonDatamodel.parentdataset(ds::AbstractDataset)
+
+The data set `pds` containing `ds` as a sub-group.
+`pds` is nothing for the root group.
+"""
 parentdataset(ds::AbstractDataset) = nothing
+
 sync(ds::AbstractDataset) = nothing
 
 """

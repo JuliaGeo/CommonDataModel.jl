@@ -62,7 +62,12 @@ end
 
 function parentdataset(mfds::MFDataset)
     ds = parentdataset.(mfds.ds)
-    return MFDataset(ds,mfds.aggdim,mfds.isnewdim,mfds.constvars)
+
+    if isnothing(ds[1])
+        return nothing
+    else
+        return MFDataset(ds,mfds.aggdim,mfds.isnewdim,mfds.constvars)
+    end
 end
 
 Base.Array(v::MFVariable) = Array(v.var)
