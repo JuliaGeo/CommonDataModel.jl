@@ -1,7 +1,6 @@
 using CommonDataModel
+using CommonDataModel: MemoryDataset
 using Test
-
-include("memory_dataset.jl")
 
 @testset "CommonDataModel" begin
     #include("test_conversion.jl")

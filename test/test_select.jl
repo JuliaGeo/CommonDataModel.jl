@@ -4,7 +4,16 @@ using Dates
 using IntervalSets
 using Test
 using Printf
-import CommonDataModel: AbstractVariable, dimnames, coordinate_value, coordinate_names, Near, split_by_and, SubDataset, @select, select
+import CommonDataModel:
+    @select,
+    AbstractVariable,
+    Near,
+    SubDataset,
+    coordinate_names,
+    coordinate_value,
+    dimnames,
+    select,
+    split_by_and
 
 
 struct SelectableVariable{T,N,NT,TA} <: AbstractArray{T,N} where NT <: NTuple where TA <: AbstractArray{T,N}
@@ -367,7 +376,7 @@ end
 
 fname_subset = tempname()
 times = DateTime(1992,1,1):Dates.Day(1):DateTime(1992,1,3)
-ds = MFDataset(TDS,url.(TDS,times),aggdim = "time",deferopen=false);
+ds = TDS(url.(TDS,times),aggdim = "time",deferopen=false);
 ds_subset = @select(ds,30 <= lon <= 60 && 40 <= lat <= 90)
 TDS(fname_subset,"c")  do ds_dest
     write(ds_dest,ds_subset)

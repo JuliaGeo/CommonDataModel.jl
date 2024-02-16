@@ -7,6 +7,7 @@ using Printf
 using Preferences
 using DataStructures
 import Base:
+    checkbounds,
     close,
     collect,
     display,
@@ -20,6 +21,7 @@ import Base:
     show,
     size,
     write
+
 import Statistics
 import Statistics:
     maximum,
@@ -48,6 +50,7 @@ include("select.jl")
 include("aggregation.jl")
 include("groupby.jl")
 include("rolling.jl")
+include("memory_dataset.jl")
 
 end # module CommonDataModel
 

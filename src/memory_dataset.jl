@@ -1,32 +1,4 @@
-import Base: size, getindex, setindex!, checkbounds
 import CommonDataModel as CDM
-#import CommonDataModel: SymbolOrString
-using DataStructures
-import CommonDataModel: defVar, unlimited, name, dimnames, dataset, variable, dim, attribnames, attrib, defDim, defAttrib, delAttrib, MFDataset, iswritable, SymbolOrString, parentdataset, load!, maskingvalue
-
-mutable struct ResizableArray{T,N} <: AbstractArray{T,N}
-    A::AbstractArray{T,N}
-    fillvalue::T
-end
-
-struct MemoryVariable{T,N,TP,TA <: AbstractArray{T,N}} <: CDM.AbstractVariable{T,N}
-    parent_dataset::TP
-    name::String
-    dimnames::NTuple{N,String}
-    data::TA
-    _attrib::OrderedDict{String,Any}
-end
-
-struct MemoryDataset{TP,Tmasingvalue} <: CDM.AbstractDataset
-    parent_dataset::TP
-    name::String # "/" for root group
-    dimensions::OrderedDict{String,Int}
-    variables::OrderedDict{String,MemoryVariable}
-    _attrib::OrderedDict{String,Any}
-    unlimited::Vector{String}
-    _group::OrderedDict{String,Any}
-    maskingvalue::Tmasingvalue
-end
 
 Base.size(RA::ResizableArray) = size(RA.A)
 Base.getindex(RA::ResizableArray,inds...) = getindex(RA.A,inds...)
@@ -233,7 +205,7 @@ end
 
 
 MemoryDataset(keys::AbstractArray{<:AbstractString,N}, args...; kwargs...) where N =
-    MFDataset(MemoryDataset,fnames, args...; kwargs...)
+    MFDataset(MemoryDataset,keys, args...; kwargs...)
 
 
 function MemoryDataset(f::Function,args...; kwargs...)

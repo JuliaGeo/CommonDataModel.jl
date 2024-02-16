@@ -5,6 +5,10 @@ using Printf
 #using NCDatasets: NetCDFError, load!
 using DataStructures
 using CFTime
+using CommonDataModel:
+    MemoryDataset,
+    name,
+    load!
 
 sz = (4,5)
 filename = tempname()

@@ -12,10 +12,14 @@ import CommonDataModel:
     Dimensions,
     checksum,
     chunking,
+    dataset,
     defGroup,
     deflate,
+    dimnames,
     fillvalue,
-    sync
+    parentdataset,
+    sync,
+    variable
 
 function example_file(TDS,i,array, fname = tempname();
     varname = "var")

@@ -171,3 +171,31 @@ end
 
 
 const Iterable = Union{Attributes,Dimensions,Groups,AbstractDataset}
+
+
+# memory dataset
+
+mutable struct ResizableArray{T,N} <: AbstractArray{T,N}
+    A::AbstractArray{T,N}
+    fillvalue::T
+end
+
+struct MemoryVariable{T,N,TP,TA <: AbstractArray{T,N}} <: AbstractVariable{T,N}
+    parent_dataset::TP
+    name::String
+    dimnames::NTuple{N,String}
+    data::TA
+    _attrib::OrderedDict{String,Any}
+end
+
+struct MemoryDataset{TP,Tmasingvalue} <: AbstractDataset
+    parent_dataset::TP
+    name::String # "/" for root group
+    dimensions::OrderedDict{String,Int}
+    variables::OrderedDict{String,MemoryVariable}
+    _attrib::OrderedDict{String,Any}
+    unlimited::Vector{String}
+    _group::OrderedDict{String,Any}
+    maskingvalue::Tmasingvalue
+end
+
