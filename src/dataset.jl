@@ -351,7 +351,7 @@ function Base.write(dest::AbstractDataset, src::AbstractDataset;
                 ()
             end
 
-        defVar(dest,variable(src,varname); kwargs...)
+        defVar(dest,src[varname]; kwargs...)
     end
 
     # loop over all global attributes
