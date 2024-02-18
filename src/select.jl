@@ -251,6 +251,25 @@ macro select(v,expression)
     return Expr(:call,:select,esc(v),args...)
 end
 
+
+
+# transform the ranges if possible to avoid issue
+# https://github.com/meggart/DiskArrays.jl/issues/138
+# for the most common case
+_maybetorange(v) =  v
+function _maybetorange(v::AbstractVector)
+    if isempty(v)
+        return v
+    end
+
+    r = v[begin]:v[end]
+    if v == r
+        return r
+    else
+        return v
+    end
+end
+
 """
     vsubset = CommonDataModel.select(v,param1 => condition1, param2 => condition2,...)
     dssubset = CommonDataModel.select(ds,param1 => condition1, param2 => condition2,...)
@@ -334,9 +353,9 @@ function select(v,conditions...)
     end
 
     if v isa AbstractArray
-        view(v, indices...)
+        view(v, _maybetorange.(indices)...)
     else
-        view(v; indices...)
+        view(v; ((k=>_maybetorange(v)) for (k,v) in indices)...)
     end
 end
 
