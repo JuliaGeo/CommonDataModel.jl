@@ -135,7 +135,7 @@ function _defVar(ds::AbstractDataset,name::SymbolOrString,data,nctype,vardimname
 
             if (dimlen != size(data,i))
                 error("dimension $(dimname) is already defined with the " *
-                    "length $dimlen. It cannot be redefined with a length of $(size(data,i)).")
+                    "length $dimlen. It cannot be redefined with a length of $(size(data,i)) for the variable $name.")
             end
         end
     end
