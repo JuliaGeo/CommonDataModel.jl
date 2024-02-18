@@ -44,6 +44,7 @@ end
 struct ReducedGroupedVariable{T,N,TGV,TF}  <: AbstractVariable{T,N}
     gv::TGV
     reduce_fun::TF
+    _attrib::OrderedDict{String,Any}
 end
 
 
@@ -140,6 +141,11 @@ function variable(gds::ReducedGroupedDataset,varname::SymbolOrString)
         return ReducedGroupedVariable(gv,gds.reduce_fun)
     end
 end
+
+
+attribnames(gds::ReducedGroupedDataset) = attribnames(gds.ds)
+attrib(gds::ReducedGroupedDataset,attribname::SymbolOrString) =
+    attrib(gds.ds,attribname)
 
 #
 # methods with GroupedVariable as main argument
@@ -396,7 +402,8 @@ function ReducedGroupedVariable(gv::GroupedVariable,reduce_fun)
     T = eltype(gv.v)
     @debug "inference " T reduce_fun  Base.return_types(reduce_fun, (Vector{T},))
     N = ndims(gv.v)
-    ReducedGroupedVariable{T,N,typeof(gv),typeof(reduce_fun)}(gv,reduce_fun)
+    _attrib = OrderedDict(gv.v.attrib)
+    ReducedGroupedVariable{T,N,typeof(gv),typeof(reduce_fun)}(gv,reduce_fun,_attrib)
 end
 
 function ReducedGroupedDataset(gds::GroupedDataset,reduce_fun)
@@ -439,6 +446,12 @@ end
 
 dimnames(gr::ReducedGroupedVariable) = dimnames(gr.gv.v)
 name(gr::ReducedGroupedVariable) = name(gr.gv.v)
+
+
+attribnames(gr::ReducedGroupedVariable) = collect(keys(gr._attrib))
+attrib(gr::ReducedGroupedVariable,attribname::SymbolOrString) = gr._attrib[attribname]
+defAttrib(gr::ReducedGroupedVariable,attribname::SymbolOrString,value) =
+    gr._attrib[attribname] = value
 
 struct ReducedGroupedVariableStyle <: BroadcastStyle end
 Base.BroadcastStyle(::Type{<:ReducedGroupedVariable}) = ReducedGroupedVariableStyle()

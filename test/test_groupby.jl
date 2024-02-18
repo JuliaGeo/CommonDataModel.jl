@@ -6,14 +6,18 @@ using Statistics
 using CommonDataModel
 using CommonDataModel:
     @groupby,
-    name,
     GroupedVariable,
+    MemoryDataset,
     ReducedGroupedVariable,
     _array_selectdim_indices,
     _dest_indices,
     _dim_after_getindex,
     _indices,
-    groupby
+    dataset,
+    defVar,
+    groupby,
+    name,
+    variable
 
 
 #include("memory_dataset.jl");
@@ -53,13 +57,14 @@ data3 .= data
 data3[1,1,:] .= missing
 data3[1,2,1] = missing
 
-TDS(fname,"c") do ds
+TDS(fname,"c",attrib = ["title" => "test"]) do ds
     defVar(ds,"lon",1:size(data,1),("lon",))
     defVar(ds,"lat",1:size(data,2),("lat",))
     defVar(ds,"time",time,("time",))
-    defVar(ds,"data",data,("lon","lat","time"))
+    defVar(ds,"data",data,("lon","lat","time"),attrib = ["foo" => "bar"])
     defVar(ds,"data2",data .+ 1,("lon","lat","time"))
     defVar(ds,"data3",data3,("lon","lat","time"))
+    defVar(ds,"data4",data,("lon","lat","time"),attrib = ["scale_factor" => 2])
 end
 
 ds = TDS(fname)
@@ -108,6 +113,9 @@ gd = groupby(ds[:data],:time => Dates.Month);
 d_sum = cat([sum(ds[varname][:,:,:][:,:,findall(Dates.month.(ds[coordname][:]) .== m)],dims=3)
                  for m in 1:12]...,dims=3)
 
+d_mean = cat([mean(ds[varname][:,:,:][:,:,findall(Dates.month.(ds[coordname][:]) .== m)],dims=3)
+                 for m in 1:12]...,dims=3)
+
 
 gd = groupby(ds["data"],"time" => Dates.Month)
 month_sum = sum(gd);
@@ -118,11 +126,25 @@ gd = groupby(ds[:data],:time => Dates.Month)
 month_sum = sum(gd);
 @test month_sum[:,:,:] == d_sum
 
-# group dataset
-gds = sum(groupby(ds,:time => Dates.Month))
-@test gds["data"][:,:,:] == d_sum
+# group dataset function
+gds = mean(groupby(ds,:time => Dates.Month))
+@test gds["data"][:,:,:] == d_mean
 @test gds["lon"][:] == ds["lon"][:]
 @test gds["lat"][:] == ds["lat"][:]
+@test gds["data4"][:,:,:] == d_mean
+@test gds.attrib["title"] == "test"
+@test gds["data"].attrib["foo"] == "bar"
+@test collect(keys(gds.attrib)) == ["title"]
+@test collect(keys(gds["data"].attrib)) == ["foo"]
+
+# group dataset macro
+gds = mean(@groupby(ds,Dates.Month(time)))
+@test gds["data"][:,:,:] == d_mean
+@test gds["lon"][:] == ds["lon"][:]
+@test gds["lat"][:] == ds["lat"][:]
+
+gr = mean(groupby(ds["data4"],:time => Dates.Month))
+@test gr[:,:,:] == d_mean
 
 
 gr = month_sum
