@@ -104,7 +104,8 @@ end
 
 variable(dds::DeferDataset,varname::Symbol) = variable(dds,string(varname))
 
-dataset(dv::DeferVariable) = DeferDataset(dv.r.filename)
+dataset(dv::DeferVariable{T,N,TDS}) where {T,N,TDS} =
+    DeferDataset(TDS,dv.r.filename,dv.r.mode)
 
 function Base.getindex(dv::DeferVariable,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
     Variable(dv) do v
