@@ -230,7 +230,7 @@ function defVar(dest::AbstractDataset,varname::SymbolOrString,srcvar::AbstractVa
     var = srcvar.var
     dimension_names = dimnames(var)
     cfdestvar = defVar(dest, varname, eltype(var), dimension_names;
-                       attrib = attribs(var))
+                       attrib = attribs(srcvar))
     destvar = variable(dest,varname)
 
     storage,chunksizes = chunking(var)
