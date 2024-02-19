@@ -10,6 +10,7 @@ import CommonDataModel:
     Attributes,
     CatArrays,
     Dimensions,
+    MemoryDataset,
     checksum,
     chunking,
     dataset,

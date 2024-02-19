@@ -17,10 +17,11 @@ defAttrib(v::SubVariable,name::SymbolOrString,data) = defAttrib(v.parent,name,da
 function SubVariable(A::AbstractVariable,indices...)
     var = nothing
     if hasproperty(A,:var)
-        if hasproperty(A.var,:attrib)
+        if hasmethod(SubVariable,Tuple{typeof(A.var),typeof.(indices)...})
             var = SubVariable(A.var,indices...)
         end
     end
+
     T = eltype(A)
     N = length(size_getindex(A,indices...))
     return SubVariable{T,N,typeof(A),typeof(indices),typeof(A.attrib),typeof(var)}(

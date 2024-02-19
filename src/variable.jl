@@ -203,13 +203,64 @@ Defines and return the variable in the data set `ds`
 copied from the variable `src`. The dimension name, attributes
 and data are copied from `src` as well as the variable name (unless provide by `name`).
 """
-function defVar(dest::AbstractDataset,name::SymbolOrString,srcvar::AbstractVariable; kwargs...)
-    v = defVar(dest,name,
-               Array(srcvar),
-               dimnames(srcvar),
-               attrib=attribs(srcvar); kwargs...)
-    return v
+function defVar(dest::AbstractDataset,varname::SymbolOrString,srcvar::AbstractVariable; kwargs...)
+    _ignore_checksum = false
+    if haskey(kwargs,:checksum)
+        _ignore_checksum = kwargs[:checksum] === nothing
+    end
+
+    src = dataset(srcvar)
+
+    # dimensions
+    unlimited_dims = unlimited(src)
+
+    for dimname in dimnames(srcvar)
+        if dimname in _dimnames_recursive(dest)
+            # dimension is already defined
+            continue
+        end
+
+        if dimname in unlimited_dims
+            defDim(dest, dimname, Inf)
+        else
+            defDim(dest, dimname, dim(src,dimname))
+        end
+    end
+
+    var = srcvar.var
+    dimension_names = dimnames(var)
+    cfdestvar = defVar(dest, varname, eltype(var), dimension_names;
+                       attrib = attribs(var))
+    destvar = variable(dest,varname)
+
+    storage,chunksizes = chunking(var)
+    @debug "chunking " name(var) size(var) size(cfdestvar) storage chunksizes
+    chunking(cfdestvar,storage,chunksizes)
+
+    isshuffled,isdeflated,deflate_level = deflate(var)
+    @debug "compression" isshuffled isdeflated deflate_level
+    deflate(cfdestvar,isshuffled,isdeflated,deflate_level)
+
+    if !_ignore_checksum
+        checksummethod = checksum(var)
+        @debug "check-sum" checksummethod
+        checksum(cfdestvar,checksummethod)
+    end
+
+    # copy data
+    # TODO use DiskArrays.eachchunk
+    # if hasmethod(eachchunk,Tuple{typeof(var)})
+    #     for indices in eachchunk(var)
+    #         destvar[indices...] = var[indices...]
+    #     end
+    # else
+    indices = ntuple(i -> axes(var,i),ndims(var))
+    destvar[indices...] = var[indices...]
+    #end
+
+    return cfdestvar
 end
+
 
 function defVar(dest::AbstractDataset,srcvar::AbstractVariable; kwargs...)
     defVar(dest,name(srcvar),srcvar; kwargs...)
@@ -261,8 +312,13 @@ end
 
 
 chunking(v::AbstractVariable) = (:contiguous,size(v))
+chunking(v::AbstractVariable,storage,chunksizes) = nothing
+
 deflate(v::AbstractVariable) = (false,false,0)
+deflate(v::AbstractVariable,isshuffled,isdeflated,deflate_level) = nothing
+
 checksum(v::AbstractVariable) = :nochecksum
+checksum(v::AbstractVariable,checksummethod) = nothing
 
 fillvalue(v::AbstractVariable{T}) where T = v.attrib["_FillValue"]::T
 
