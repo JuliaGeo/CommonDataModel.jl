@@ -80,7 +80,7 @@ function load!(CA::CatArray{T,N},B,idx...) where {T,N}
     for (array,(idx_global,idx_local)) in zip(CA.arrays,idx_global_local)
         if valid_local_idx(idx_local...)
             # get subset from subarray
-            subset = @view array[idx_local...]
+            subset = array[idx_local...]
             B[idx_global...] .= subset
         end
     end
