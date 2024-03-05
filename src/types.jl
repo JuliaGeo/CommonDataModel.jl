@@ -188,7 +188,7 @@ struct MemoryVariable{T,N,TP,TA <: AbstractArray{T,N}} <: AbstractVariable{T,N}
     _attrib::OrderedDict{String,Any}
 end
 
-struct MemoryDataset{TP,Tmasingvalue} <: AbstractDataset
+struct MemoryDataset{TP <: Union{Nothing,AbstractDataset},Tmasingvalue} <: AbstractDataset
     parent_dataset::TP
     name::String # "/" for root group
     dimensions::OrderedDict{String,Int}

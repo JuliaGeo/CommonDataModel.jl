@@ -14,6 +14,7 @@ import CommonDataModel:
     checksum,
     chunking,
     dataset,
+    defVar,
     defGroup,
     deflate,
     dimnames,

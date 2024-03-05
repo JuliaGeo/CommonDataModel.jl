@@ -264,7 +264,7 @@ function Base.similar(bc::Broadcasted{GroupedVariableStyle}, ::Type{ElType})  wh
     return A
 end
 
-function Base.broadcasted(f,A::GroupedVariable{TV,TF,TGM,TM,TG}) where {TV,TF,TGM,TM,TG}
+function Base.broadcasted(f::Function,A::GroupedVariable{TV,TF,TGM,TM,TG}) where {TV,TF,TGM,TM,TG}
     # TODO change output TG
 
     map_fun = ∘(f,A.map_fun)
@@ -425,8 +425,8 @@ The function `f` will be called as `f(x,dims=d)` where `x` array (an element
 of `gv`) and `d` is an integer of the dimension overwhich one need to reduce
 `x`.
 """
-Base.reduce(f,gv::GroupedVariable) = ReducedGroupedVariable(gv,f)
-Base.reduce(f,gds::GroupedDataset) = ReducedGroupedDataset(gds,f)
+Base.reduce(f::Function,gv::GroupedVariable) = ReducedGroupedVariable(gv,f)
+Base.reduce(f::Function,gds::GroupedDataset) = ReducedGroupedDataset(gds,f)
 
 for fun in (:maximum, :mean, :median, :minimum, :std, :sum, :var)
     @eval $fun(gv::GroupedVariable) = reduce($fun,gv)
@@ -500,8 +500,10 @@ function broadcasted_gvr!(C,f,A,B)
 end
 
 
-Base.broadcasted(f,A,B::ReducedGroupedVariable) = broadcasted_gvr!(similar(A),f,A,B)
-Base.broadcasted(f,A::ReducedGroupedVariable,B) = broadcasted_gvr!(similar(B),f,A,B)
+Base.broadcasted(f::Function,A,B::ReducedGroupedVariable) =
+    broadcasted_gvr!(similar(A),f,A,B)
+Base.broadcasted(f::Function,A::ReducedGroupedVariable,B) =
+    broadcasted_gvr!(similar(B),f,A,B)
 
 
 function Base.Array(gr::ReducedGroupedVariable)
