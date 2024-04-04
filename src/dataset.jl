@@ -18,6 +18,16 @@ only a single group, this will be always the root group `"/"`.
 name(ds::AbstractDataset) = "/"
 
 """
+    pds = CommonDatamodel.parentdataset(ds::AbstractDataset)
+
+The data set `pds` containing `ds` as a sub-group.
+`pds` is nothing for the root group.
+"""
+parentdataset(ds::AbstractDataset) = nothing
+
+sync(ds::AbstractDataset) = nothing
+
+"""
     CommonDatamodel.groupnames(ds::AbstractDataset)
 
 All the subgroup names of the data set `ds`. For a data set containing
@@ -116,7 +126,260 @@ function Base.show(io::IO,ds::AbstractDataset)
 end
 
 
-Base.getindex(ds::AbstractDataset,varname) = cfvariable(ds,varname)
+
+maskingvalue(ds::AbstractDataset) = missing
+
+"""
+    v = getindex(ds::AbstractDataset, varname::SymbolOrString)
+
+Return the variable `varname` in the dataset `ds` as a
+`CFVariable`. The following CF convention are honored when the
+variable is indexed:
+* `_FillValue` or `missing_value` (which can be a list) will be returned as `missing`.
+* `scale_factor` and `add_offset` are applied (output = `scale_factor` * `data_in_file` +  `add_offset`)
+* time variables (recognized by the units attribute and possibly the calendar attribute) are returned usually as
+  `DateTime` object. Note that `CFTime.DateTimeAllLeap`, `CFTime.DateTimeNoLeap` and
+  `CF.TimeDateTime360Day` cannot be converted to the proleptic gregorian calendar used in
+  julia and are returned as such. (See [`CFTime.jl`](https://github.com/JuliaGeo/CFTime.jl)
+  for more information about those date types.) If a calendar is defined but not among the
+  ones specified in the CF convention, then the data in the file is not
+  converted into a date structure.
+
+A call `getindex(ds, varname)` is usually written as `ds[varname]`.
+
+If variable represents a cell boundary, the attributes `calendar` and `units` of the related variables are used, if they are not specified. For example:
+
+```
+dimensions:
+  time = UNLIMITED; // (5 currently)
+  nv = 2;
+variables:
+  double time(time);
+    time:long_name = "time";
+    time:units = "hours since 1998-04-019 06:00:00";
+    time:bounds = "time_bnds";
+  double time_bnds(time,nv);
+```
+
+In this case, the variable `time_bnds` uses the units and calendar of `time`
+because both variables are related thought the bounds attribute following the CF conventions.
+
+See also [`cfvariable(ds, varname)`](@ref).
+"""
+function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
+    return cfvariable(ds, varname)
+end
+
+
+function Base.setindex!(ds::AbstractDataset,data::AbstractVariable,varname::SymbolOrString)
+    return defVar(ds, varname, data)
+end
+
+
+function Base.haskey(ds::AbstractDataset,varname)
+    return Symbol(varname) in Symbol.(keys(ds))
+end
+
+"""
+    varbyattrib(ds, attname = attval)
+
+Returns a list of variable(s) which has the attribute `attname` matching the value `attval`
+in the dataset `ds`.
+The list is empty if the none of the variables has the match.
+The output is a list of `CFVariable`s.
+
+# Examples
+
+Load all the data of the first variable with standard name "longitude" from the
+NetCDF file `results.nc`.
+
+```julia-repl
+julia> ds = NCDataset("results.nc", "r");
+julia> data = varbyattrib(ds, standard_name = "longitude")[1][:]
+```
+
+"""
+function varbyattrib(ds::Union{AbstractDataset,AbstractVariable}; kwargs...)
+    # Start with an empty list of variables
+    varlist = []
+
+    # Loop on the variables
+    for v in keys(ds)
+        var = ds[v]
+
+        matchall = true
+
+        for (attsym,attval) in kwargs
+            attname = String(attsym)
+
+            # Check if the variable has the desired attribute
+            if attname in attribnames(var)
+                # Check if the attribute value is the selected one
+                if attrib(var,attname) != attval
+                    matchall = false
+                    break
+                end
+            else
+                matchall = false
+                break
+            end
+        end
+
+        if matchall
+            push!(varlist, var)
+        end
+    end
+
+    return varlist
+end
+
+"""
+    var = getindex(ds::Union{AbstractDataset,AbstractVariable},cfname::CFStdName)
+
+Return the NetCDF variable `var` with the standard name `cfname` from a
+dataset. If the first argument is a variable, then the search is limited to
+all variables with the same dimension names.
+"""
+function Base.getindex(ds::Union{AbstractDataset,AbstractVariable},n::CFStdName)
+    ncvars = varbyattrib(ds, standard_name = String(n.name))
+    if length(ncvars) == 1
+        return ncvars[1]
+    else
+        throw(KeyError("$(length(ncvars)) matches while searching for a variable with standard_name attribute equal to $(n.name)"))
+    end
+end
+
+"""
+    names = keys(g::Groups)
+
+Return the names of all subgroubs of the group `g`.
+"""
+Base.keys(groups::Groups) = groupnames(groups.ds)
+
+"""
+    group = getindex(g::Groups,groupname::AbstractString)
+
+Return the NetCDF `group` with the name `groupname` from the parent
+group `g`.
+
+For example:
+
+```julia
+ds = NCDataset("results.nc", "r");
+forecast_group = ds.group["forecast"]
+forecast_temp = forecast_group["temperature"]
+```
+"""
+Base.getindex(groups::Groups,name) = group(groups.ds,name)
+
+
+# Initialize the ds._boundsmap variable
+function initboundsmap!(ds)
+    empty!(ds._boundsmap)
+    for vname in keys(ds)
+        v = variable(ds,vname)
+        bounds = get(v.attrib,"bounds",nothing)
+
+        if bounds !== nothing
+            ds._boundsmap[bounds] = vname
+        end
+    end
+end
+
+
+"""
+    write(dest::AbstractDataset, src::AbstractDataset; include = keys(src), exclude = [])
+
+Write the variables of `src` dataset into an empty `dest` dataset (which must be opened in mode `"a"` or `"c"`).
+The keywords `include` and `exclude` configure which variable of `src` should be included
+(by default all), or which should be `excluded` (by default none).
+
+If the first argument is a file name, then the dataset is open in create mode (`"c"`).
+
+This function is useful when you want to save the dataset from a multi-file dataset.
+
+To save a subset, one can use the view function `view` to virtually slice
+a dataset:
+
+## Example
+
+```
+NCDataset(fname_src) do ds
+    write(fname_slice,view(ds, lon = 2:3))
+end
+```
+
+All variables in the source file `fname_src` with a dimension `lon` will be sliced
+along the indices `2:3` for the `lon` dimension. All attributes (and variables
+without a dimension `lon`) will be copied over unmodified.
+"""
+function Base.write(dest::AbstractDataset, src::AbstractDataset;
+                    include = keys(src),
+                    exclude = String[],
+                    _ignore_checksum = false,
+                    )
+
+
+    unlimited_dims = unlimited(src)
+
+    for (dimname,dimlength) in dims(src)
+        isunlimited = dimname in unlimited_dims
+
+        # if haskey(dest.dim,dimname)
+        #     # check length
+        #     if (dest.dim[dimname] !== src.dim[dimname]) && !isunlimited
+        #         throw(DimensionMismatch("length of the dimensions $dimname are inconstitent in files $(path(dest)) and $(path(src))"))
+        #     end
+        # else
+            if isunlimited
+                defDim(dest, dimname, Inf)
+            else
+                defDim(dest, dimname, dimlength)
+            end
+        # end
+    end
+
+    # loop over variables
+    for varname in include
+        (varname ∈ exclude) && continue
+        @debug "Writing variable $varname..."
+
+        kwargs =
+            if _ignore_checksum
+                (checksum = nothing,)
+            else
+                ()
+            end
+
+        defVar(dest,src[varname]; kwargs...)
+    end
+
+    # loop over all global attributes
+    for (attribname,attribval) in attribs(src)
+        dest.attrib[attribname] = attribval
+    end
+
+    # loop over all groups
+    for (groupname,groupsrc) in groups(src)
+        groupdest = defGroup(dest,groupname)
+        write(groupdest,groupsrc)
+    end
+
+    return dest
+end
+
+
+@inline function Base.getproperty(ds::Union{AbstractDataset,AbstractVariable},name::Symbol)
+    if (name == :attrib) && !hasfield(typeof(ds),name)
+        return Attributes(ds)
+    elseif (name == :dim) && !hasfield(typeof(ds),name)
+        return Dimensions(ds)
+    elseif (name == :group) && !hasfield(typeof(ds),name) && (ds isa AbstractDataset)
+        return Groups(ds)
+    else
+        return getfield(ds,name)
+    end
+end
 
 
 for (item_color,default) in (

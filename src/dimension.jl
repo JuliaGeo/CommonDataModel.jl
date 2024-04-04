@@ -2,9 +2,29 @@
 """
     CommonDatamodel.dimnames(ds::AbstractDataset)
 
-Return an iterable of all dimension names in `ds`.
+Return an iterable of all dimension names in `ds`. This
+information can also be accessed using the property `ds.dim`:
+
+# Examples
+
+```julia
+ds = NCDataset("results.nc", "r");
+dimnames = keys(ds.dim)
+```
 """
 dimnames(ds::Union{AbstractDataset,AbstractVariable}) = ()
+
+
+function _dimnames_recursive(ds::AbstractDataset)
+    dn = collect(dimnames(ds))
+
+    pd = parentdataset(ds)
+    if pd !== nothing
+        append!(dn,_dimnames_recursive(pd))
+    end
+
+    return Tuple(dn)
+end
 
 
 """
@@ -13,7 +33,7 @@ dimnames(ds::Union{AbstractDataset,AbstractVariable}) = ()
 Return the length of the dimension `dimname` in the data set `ds`.
 """
 function dim(v::AbstractVariable,dimname::SymbolOrString)
-    if !(dimname in dimnames(v))
+    if !(String(dimname) in dimnames(v))
         error("$dimname is not among the dimensions of $(name(v))")
     end
     return dim(dataset(v),dimname)
@@ -62,5 +82,67 @@ function show_dim(io::IO, d)
         end
     catch err
         print(io, "Dimensions (file closed)")
+    end
+end
+
+"""
+    keys(d::Dimensions)
+
+Return a list of all dimension names in NCDataset `ds`.
+
+# Examples
+
+```julia
+ds = NCDataset("results.nc", "r");
+dimnames = keys(ds.dim)
+```
+"""
+Base.keys(dims::Dimensions) = dimnames(dims.ds)
+
+
+Base.getindex(dims::Dimensions,name) = dim(dims.ds,name)
+
+
+"""
+    setindex!(d::Dimensions,len,name::AbstractString)
+
+Defines the dimension called `name` to the length `len`, for example:
+
+```julia
+ds = NCDataset("file.nc","c")
+ds.dim["longitude"] = 100
+```
+
+If `len` is the special value `Inf`, then the dimension is considered as
+`unlimited`, i.e. it will grow as data is added to the NetCDF file.
+"""
+Base.setindex!(dims::Dimensions,data,name) = defDim(dims.ds,name,data)
+
+
+Base.show(io::IO,dims::Dimensions) = show_dim(io,dims)
+
+"""
+    unlimited(d::Dimensions)
+
+Return the names of all unlimited dimensions.
+"""
+unlimited(dims::Dimensions) = unlimited(dims.ds)
+
+
+Base.length(a::Iterable) = length(keys(a))
+
+function Base.iterate(a::Iterable, state = collect(keys(a)))
+    if length(state) == 0
+        return nothing
+    end
+
+    return (state[1] => a[popfirst!(state)], state)
+end
+
+function Base.get(a::Iterable, name::SymbolOrString, default)
+    if haskey(a,name)
+        return a[name]
+    else
+        return default
     end
 end

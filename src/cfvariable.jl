@@ -1,13 +1,5 @@
-# Variable (with applied transformations following the CF convention)
-mutable struct CFVariable{T,N,TV,TA,TSA}  <: AbstractVariable{T, N}
-    # this var is generally a `Variable` type
-    var::TV
-    # Dict-like object for all attributes read from disk
-    attrib::TA
-    # a named tuple with fill value, scale factor, offset,...
-    # immutable for type-stability
-    _storage_attrib::TSA
-end
+
+
 
 """
     sz = size(var::CFVariable)
@@ -25,17 +17,17 @@ name(v::CFVariable) = name(v.var)
 dataset(v::CFVariable) = dataset(v.var)
 
 
+# be aware that for GRIBDatasets v.attrib is different from v.var.attrib
 attribnames(v::CFVariable) = keys(v.attrib)
 attrib(v::CFVariable,name::SymbolOrString) = v.attrib[name]
-defAttrib(v::CFVariable,name,value) = defAttrib(v.var,name,value)
+defAttrib(v::CFVariable,name,value) = v.attrib[name] = value
+delAttrib(v::CFVariable,name) = delete!(v,name)
 
 dimnames(v::CFVariable) = dimnames(v.var)
 dim(v::CFVariable,name::SymbolOrString) = dim(v.var,name)
 
 # necessary for IJulia if showing a variable from a closed file
 Base.show(io::IO,::MIME"text/plain",v::AbstractVariable) = show(io,v)
-
-Base.display(v::AbstractVariable) = show(stdout,v)
 
 
 """
@@ -82,7 +74,7 @@ ds = NCDataset("foo.nc");
 
 # 0 is declared as the fill value (add_offset and scale_factor are applied as usual)
 @show cfvariable(ds,"data", fillvalue = 0)[:]
-# return [missing, 11., 12., 13.]
+# returns [missing, 11., 12., 13.]
 
 # Use the time units: days since 2000-01-01
 @show cfvariable(ds,"data", units = "days since 2000-01-01")[:]
@@ -109,11 +101,13 @@ function cfvariable(ds,
                     # look also at parent if defined
                     units = _getattrib(ds,_v,_parentname,"units",nothing),
                     calendar = _getattrib(ds,_v,_parentname,"calendar",nothing),
+                    maskingvalue = maskingvalue(ds),
                     )
 
     v = _v
     T = eltype(v)
 
+    @debug "parent variable" _parentname
 
     # sanity check
     if (T <: Number) && (
@@ -122,7 +116,7 @@ function cfvariable(ds,
         @warn "variable '$varname' has a numeric type but the corresponding " *
             "missing_value ($missing_value) is a character or string. " *
             "Comparing, e.g. an integer and a string (1 == \"1\") will always evaluate to false. " *
-            "See the function NCDatasets.cfvariable how to manually override the missing_value attribute."
+            "See the function CommonDataModel.cfvariable how to manually override the missing_value attribute."
     end
 
     time_origin = nothing
@@ -138,7 +132,15 @@ function cfvariable(ds,
             time_origin,time_factor = CFTime.timeunits(units, calendar)
         catch err
             calendar = nothing
-            @warn(sprint(showerror,err))
+            @debug "time units parsing failed " err units calendar
+
+            message = (
+                "cannot parse time units `$units`",
+                (isnothing(calendar) ? "" : "  (calendar `$calendar`)"),
+                ": ",
+                sprint(showerror,err))
+
+            @warn(join(message))
         end
     end
 
@@ -153,6 +155,15 @@ function cfvariable(ds,
         end
     end
 
+    _maskingvalue =
+        # use NaN32 rather than NaN to avoid unnecessary promotion
+        # to double precision
+        if scaledtype == Float32 && maskingvalue === NaN
+            NaN32
+        end
+    _maskingvalue = maskingvalue
+
+
     storage_attrib = (
         fillvalue = fillvalue,
         missing_values = (missing_value...,),
@@ -161,9 +172,11 @@ function cfvariable(ds,
         calendar = calendar,
         time_origin = time_origin,
         time_factor = time_factor,
+        maskingvalue = _maskingvalue,
     )
 
-    rettype = _get_rettype(ds, calendar, fillvalue, missing_value, scaledtype)
+    rettype = _get_rettype(ds, calendar, fillvalue, missing_value,
+                           scaledtype,_maskingvalue)
 
     return CFVariable{rettype,ndims(v),typeof(v),typeof(attrib),typeof(storage_attrib)}(
         v,attrib,storage_attrib)
@@ -171,7 +184,7 @@ function cfvariable(ds,
 end
 
 
-function _get_rettype(ds, calendar, fillvalue, missing_value, rettype)
+function _get_rettype(ds, calendar, fillvalue, missing_value, rettype, maskingvalue)
     # rettype can be a date if calendar is different from nothing
     if calendar !== nothing
         DT = nothing
@@ -192,7 +205,7 @@ function _get_rettype(ds, calendar, fillvalue, missing_value, rettype)
     end
 
     if (fillvalue !== nothing) || (!isempty(missing_value))
-        rettype = Union{Missing,rettype}
+        rettype = promote_type(typeof(maskingvalue),rettype)
     end
     return rettype
 end
@@ -223,9 +236,9 @@ calendar(v::CFVariable) = v._storage_attrib.calendar
 The time unit in milliseconds. E.g. seconds would be 1000., days would be 86400000.
 The result can also be `nothing` if the variable has no time units.
 """
-time_factor(v::CFVariable) = v._storage_attrib[:time_factor]
+time_factor(v::CFVariable) = v._storage_attrib.time_factor
 
-
+maskingvalue(v::CFVariable) = v._storage_attrib.maskingvalue
 
 # fillvalue can be NaN (unfortunately)
 @inline isfillvalue(data,fillvalue) = data == fillvalue
@@ -269,19 +282,60 @@ end
 @inline asdate(data::Float32,time_origin,time_factor,DTcast) =
     convert(DTcast,time_origin + Dates.Millisecond(round(Int64,time_factor * Float64(data))))
 
-
 @inline fromdate(data::TimeType,time_origin,inv_time_factor) =
     Dates.value(data - time_origin) * inv_time_factor
 @inline fromdate(data,time_origin,time_factor) = data
 
-@inline function CFtransform(data,fv,scale_factor,add_offset,time_origin,time_factor,DTcast)
-    return asdate(
-        CFtransform_offset(
-            CFtransform_scale(
-                CFtransform_missing(data,fv),
-                scale_factor),
-            add_offset),
-        time_origin,time_factor,DTcast)
+
+@inline CFtransformmaskingvalue(data,maskingvalue) = data
+@inline CFtransformmaskingvalue(data::Missing,maskingvalue) = maskingvalue
+
+@inline CFinvtransformmaskingvalue(data,maskingvalue::Missing) = data
+
+# fall-back if maskingvalue is not missing
+# for numbers we use == (rather ===) so that 40 == 40. is true
+# but we need to double check for NaNs
+@inline function CFinvtransformmaskingvalue(data::Number,maskingvalue::Number)
+    if (data == maskingvalue) || (isnan(maskingvalue) && isnan(data))
+        return missing
+    else
+        data
+    end
+end
+
+# if maskingvalue is not a number e.g. nothing, isnan is not defined
+@inline function CFinvtransformmaskingvalue(data,maskingvalue)
+    if data === maskingvalue
+        return missing
+    else
+        data
+    end
+end
+
+
+
+# Transformation pipelne
+#
+# fillvalue to missing -> scale -> add offset -> transform to dates -> missing to maskingvalue (alternative sentinel value)
+#
+# Inverse transformation pipleine
+#
+# maskingvalue to missing -> round float if should be ints -> encode dates -> remove offset -> inverse scalling -> missing to fillvalue
+#
+# All steps are optional and can be skipped if not applicable
+
+
+@inline function CFtransform(data,fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue,DTcast)
+    return CFtransformmaskingvalue(
+        asdate(
+            CFtransform_offset(
+                CFtransform_scale(
+                    CFtransform_missing(
+                        data,fv),
+                    scale_factor),
+                add_offset),
+            time_origin,time_factor,DTcast),
+        maskingvalue)
 end
 
 # round float to integers
@@ -289,13 +343,16 @@ _approximate(::Type{T},data) where T <: Integer = round(T,data)
 _approximate(::Type,data) = data
 
 
-@inline function CFinvtransform(data,fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,DT)
+@inline function CFinvtransform(data,fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,maskingvalue,DT)
     return _approximate(
         DT,
         CFtransform_replace_missing(
             CFtransform_scale(
                 CFtransform_offset(
-                    fromdate(data,time_origin,inv_time_factor),
+                    fromdate(
+                        CFinvtransformmaskingvalue(
+                            data,maskingvalue),
+                        time_origin,inv_time_factor),
                     minus_offset),
                 inv_scale_factor),
             fv))
@@ -309,27 +366,27 @@ end
 #    CFtransform.(data,fv,scale_factor,add_offset,time_origin,time_factor,DTcast)
 
 # for scalars
-@inline CFtransformdata(data,fv,scale_factor,add_offset,time_origin,time_factor,DTcast) =
-    CFtransform(data,fv,scale_factor,add_offset,time_origin,time_factor,DTcast)
+@inline CFtransformdata(data,fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue,DTcast) =
+    CFtransform(data,fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue,DTcast)
 
 # in-place version
-@inline function CFtransformdata!(out,data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor) where {T,N}
+@inline function CFtransformdata!(out,data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue) where {T,N}
     DTcast = eltype(out)
     @inbounds @simd for i in eachindex(data)
-        out[i] = CFtransform(data[i],fv,scale_factor,add_offset,time_origin,time_factor,DTcast)
+        out[i] = CFtransform(data[i],fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue,DTcast)
     end
     return out
 end
 
 # for arrays
-@inline function CFtransformdata(data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,DTcast) where {T,N}
+@inline function CFtransformdata(data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue,DTcast) where {T,N}
     out = Array{DTcast,N}(undef,size(data))
-    return CFtransformdata!(out,data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor)
+    return CFtransformdata!(out,data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue)
 end
 
 @inline function CFtransformdata(
     data::AbstractArray{T,N},fv::Tuple{},scale_factor::Nothing,
-    add_offset::Nothing,time_origin::Nothing,time_factor::Nothing,::Type{T}) where {T,N}
+    add_offset::Nothing,time_origin::Nothing,time_factor::Nothing,maskingvalue,::Type{T}) where {T,N}
     # no transformation necessary (avoid allocation)
     return data
 end
@@ -349,47 +406,46 @@ end
 # end
 
 # for arrays
-@inline function CFinvtransformdata(data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,DT) where {T,N}
+@inline function CFinvtransformdata(data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue,DT) where {T,N}
     inv_scale_factor = _inv(scale_factor)
     minus_offset = _minus(add_offset)
     inv_time_factor = _inv(time_factor)
 
     out = Array{DT,N}(undef,size(data))
     @inbounds @simd for i in eachindex(data)
-        out[i] = CFinvtransform(data[i],fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,DT)
+        out[i] = CFinvtransform(data[i],fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,maskingvalue,DT)
     end
     return out
 end
 
 @inline function CFinvtransformdata(
     data::AbstractArray{T,N},fv::Tuple{},scale_factor::Nothing,
-    add_offset::Nothing,time_origin::Nothing,time_factor::Nothing,::Type{T}) where {T,N}
+    add_offset::Nothing,time_origin::Nothing,time_factor::Nothing,maskingvalue,::Type{T}) where {T,N}
     # no transformation necessary (avoid allocation)
     return data
 end
 
 # for scalar
-@inline function CFinvtransformdata(data,fv,scale_factor,add_offset,time_origin,time_factor,DT)
+@inline function CFinvtransformdata(data,fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue,DT)
     inv_scale_factor = _inv(scale_factor)
     minus_offset = _minus(add_offset)
     inv_time_factor = _inv(time_factor)
 
-    return CFinvtransform(data,fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,DT)
+    return CFinvtransform(data,fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,maskingvalue,DT)
 end
 
 
 
 # this function is necessary to avoid "iterating" over a single character in Julia 1.0 (fixed Julia 1.3)
 # https://discourse.julialang.org/t/broadcasting-and-single-characters/16836
-@inline CFtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DTcast) = CFtransform_missing(data,fv)
-@inline CFinvtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DT) = CFtransform_replace_missing(data,fv)
+#@inline CFtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DTcast) = CFtransform_missing(data,fv)
+#@inline CFinvtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DT) = CFtransform_replace_missing(data,fv)
 
 
-function Base.getindex(v::CFVariable,
-                       indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
+function Base.getindex(v::CFVariable, indexes::Union{Integer,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...)
     data = v.var[indexes...]
     return CFtransformdata(data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
-                           time_origin(v),time_factor(v),eltype(v))
+                           time_origin(v),time_factor(v),maskingvalue(v),eltype(v))
 end
 
 function Base.setindex!(v::CFVariable,data::Array{Missing,N},indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where N
@@ -407,7 +463,9 @@ function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{I
         # is incompatible with the provided data
         v.var[indexes...] = CFinvtransformdata(
             data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
-            time_origin(v),time_factor(v),eltype(v.var))
+            time_origin(v),time_factor(v),
+            maskingvalue(v),
+            eltype(v.var))
         return data
     end
 
@@ -419,7 +477,9 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,AbstractRang
     v.var[indexes...] = CFinvtransformdata(
         data,fill_and_missing_values(v),
         scale_factor(v),add_offset(v),
-        time_origin(v),time_factor(v),eltype(v.var))
+        time_origin(v),time_factor(v),
+        maskingvalue(v),
+        eltype(v.var))
 
     return data
 end
@@ -439,13 +499,13 @@ function boundsParentVar(ds,varname)
 end
 
 
-"""
+#=
     _getattrib(ds,v,parentname,attribname,default)
 
 Get an attribute, looking also at the parent variable name
 (linked via the bounds attribute as following the CF conventions).
 The default value is returned if the attribute cannot be found.
-"""
+=#
 function _getattrib(ds,v,parentname,attribname,default)
     val = get(v.attrib,attribname,nothing)
     if val !== nothing
@@ -457,5 +517,100 @@ function _getattrib(ds,v,parentname,attribname,default)
             vp = variable(ds,parentname)
             return get(vp.attrib,attribname,default)
         end
+    end
+end
+
+function _isrelated(v1::AbstractVariable,v2::AbstractVariable)
+    dimnames(v1) ⊆ dimnames(v2)
+end
+
+function Base.keys(v::AbstractVariable)
+    ds = dataset(v)
+    return [varname for (varname,ncvar) in ds if _isrelated(ncvar,v)]
+end
+
+
+function Base.getindex(v::AbstractVariable,name::SymbolOrString)
+    ds = dataset(v)
+    ncvar = ds[name]
+    if _isrelated(ncvar,v)
+        return ncvar
+    else
+        throw(KeyError(name))
+    end
+end
+
+
+"""
+    dimnames(v::CFVariable)
+
+Return a tuple of strings with the dimension names of the variable `v`.
+"""
+dimnames(v::Union{CFVariable,MFCFVariable}) = dimnames(v.var)
+
+name(v::Union{CFVariable,MFCFVariable}) = name(v.var)
+chunking(v::CFVariable,storage,chunksize) = chunking(v.var,storage,chunksize)
+chunking(v::CFVariable) = chunking(v.var)
+
+deflate(v::CFVariable,shuffle,dodeflate,deflate_level) = deflate(v.var,shuffle,dodeflate,deflate_level)
+deflate(v::CFVariable) = deflate(v.var)
+
+checksum(v::CFVariable,checksummethod) = checksum(v.var,checksummethod)
+checksum(v::CFVariable) = checksum(v.var)
+
+
+fillmode(v::CFVariable) = fillmode(v.var)
+
+
+############################################################
+# Convertion to array
+############################################################
+
+Base.Array(v::AbstractVariable{T,N}) where {T,N} = v[ntuple(i -> :, Val(N))...]
+
+
+"""
+    CommonDataModel.load!(ncvar::CFVariable, data, buffer, indices)
+
+Loads a NetCDF (or other format) variables `ncvar` in-place and puts the result in `data` (an
+array of `eltype(ncvar)`) along the specified `indices`. `buffer` is a temporary
+ array of the same size as data but the type should be `eltype(ncv.var)`, i.e.
+the corresponding type in the files (before applying `scale_factor`,
+`add_offset` and masking fill values). Scaling and masking will be applied to
+the array `data`.
+
+`data` and `buffer` can be the same array if `eltype(ncvar) == eltype(ncvar.var)`.
+
+## Example:
+
+```julia
+# create some test array
+Dataset("file.nc","c") do ds
+    defDim(ds,"time",3)
+    ncvar = defVar(ds,"vgos",Int16,("time",),attrib = ["scale_factor" => 0.1])
+    ncvar[:] = [1.1, 1.2, 1.3]
+    # store 11, 12 and 13 as scale_factor is 0.1
+end
+
+
+ds = Dataset("file.nc")
+ncv = ds["vgos"];
+# data and buffer must have the right shape and type
+data = zeros(eltype(ncv),size(ncv)); # here Vector{Float64}
+buffer = zeros(eltype(ncv.var),size(ncv)); # here Vector{Int16}
+NCDatasets.load!(ncv,data,buffer,:,:,:)
+close(ds)
+```
+"""
+@inline function load!(v::Union{CFVariable{T,N},MFCFVariable{T,N},SubVariable{T,N}}, data, buffer, indices::Union{Integer, AbstractRange{<:Integer}, Colon}...) where {T,N}
+
+    if v.var == nothing
+        return load!(v,indices...)
+    else
+        load!(v.var,buffer,indices...)
+        fmv = fill_and_missing_values(v)
+        return CFtransformdata!(data,buffer,fmv,scale_factor(v),add_offset(v),
+                                time_origin(v),time_factor(v),
+                                maskingvalue(v))
     end
 end
