@@ -42,22 +42,9 @@ end
 
 allowmissing(x::AbstractArray{T}) where {T} = convert(AbstractArray{Union{T, Missing}}, x)
 
-"""
-    data = CommonDataModel.filter(ncv, indices...; accepted_status_flags = nothing)
 
-Load and filter observations by replacing all variables without an acepted status
-flag to `missing`. It is used the attribute `ancillary_variables` to identify
-the status flag.
 
-```
-# da["data"] is 2D matrix
-good_data = NCDatasets.filter(ds["data"],:,:, accepted_status_flags = ["good_data","probably_good_data"])
-```
-
-"""
-function filter(ncv::AbstractVariable, indices...; accepted_status_flags = nothing)
-#function filter_(ncv, indices...)
-#    accepted_status_flags = ("good_value", "probably_good_value")
+function _filter(ncv::AbstractVariable, indices::Union{<:Integer,AbstractVector{<:Integer},Colon}...; accepted_status_flags = nothing)
     data = allowmissing(ncv[indices...])
 
     if (accepted_status_flags != nothing)
@@ -99,6 +86,27 @@ function filter(ncv::AbstractVariable, indices...; accepted_status_flags = nothi
     return data
 end
 
+"""
+    data = CommonDataModel.filter(ncv, indices...; accepted_status_flags = nothing)
+
+Load and filter observations by replacing all variables without an acepted status
+flag to `missing`. It is used the attribute `ancillary_variables` to identify
+the status flag.
+
+```
+# da["data"] is 2D matrix
+good_data = NCDatasets.filter(ds["data"],:,:, accepted_status_flags = ["good_data","probably_good_data"])
+```
+
+"""
+filter(ncv::AbstractVariable, indices::TIndices...; kwargs...) =
+    _filter(ncv, indices...; kwargs...)
+
+filter(ncv::AbstractVariable, indices::Vector{<:Integer}; kwargs...) =
+    _filter(ncv, indices...; kwargs...)
+
+filter(ncv::AbstractVariable, indices::BitVector; kwargs...) =
+    _filter(ncv, indices...; kwargs...)
 
 """
     cv = coord(v::Union{CFVariable,Variable},standard_name)
