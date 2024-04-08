@@ -518,36 +518,36 @@ function Base.Array(gr::ReducedGroupedVariable)
     gr[ntuple(i -> Colon(),ndims(gr))...]
 end
 
-function Base.getindex(gr::ReducedGroupedVariable{T,N,TGV,typeof(sum)},indices::Union{Integer,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...) where {T,N,TGV}
+function Base.getindex(gr::ReducedGroupedVariable{T,N,TGV,typeof(sum)},indices::TIndices...) where {T,N,TGV}
     data,count = _mapreduce(gr.gv.map_fun,+,gr.gv,indices)
     data
 end
 
-function Base.getindex(gr::ReducedGroupedVariable{T,N,TGV,typeof(mean)},indices::Union{Integer,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...) where {T,N,TGV}
+function Base.getindex(gr::ReducedGroupedVariable{T,N,TGV,typeof(mean)},indices::TIndices...) where {T,N,TGV}
     data,count = _mapreduce(gr.gv.map_fun,+,gr.gv,indices)
     data ./ count
 end
 
 
-function Base.getindex(gr::ReducedGroupedVariable{T,N,TGV,TF},indices::Union{Integer,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...) where TF <: Union{typeof(var),typeof(maximum),typeof(minimum)} where {T,N,TGV}
+function Base.getindex(gr::ReducedGroupedVariable{T,N,TGV,TF},indices::TIndices...) where TF <: Union{typeof(var),typeof(maximum),typeof(minimum)} where {T,N,TGV}
 
     return _mapreduce_aggregation(
         gr.gv.map_fun,aggregator(TF),gr.gv,indices);
 end
 
 
-function Base.getindex(gr::ReducedGroupedVariable{T,N,TGV,typeof(std)},indices::Union{Integer,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...) where {T,N,TGV}
+function Base.getindex(gr::ReducedGroupedVariable{T,N,TGV,typeof(std)},indices::TIndices...) where {T,N,TGV}
 
     return sqrt.(_mapreduce_aggregation(
         gr.gv.map_fun,VarianceWelfordAggregation,gr.gv,indices))
 end
 
 
-_dim_after_getindex(dim,ind::Union{Colon,AbstractRange,AbstractVector},other...) = _dim_after_getindex(dim+1,other...)
+_dim_after_getindex(dim,ind::TIndices,other...) = _dim_after_getindex(dim+1,other...)
 _dim_after_getindex(dim,ind::Integer,other...) = _dim_after_getindex(dim,other...)
 _dim_after_getindex(dim) = dim
 
-function Base.getindex(gr::ReducedGroupedVariable{T},indices::Union{Integer,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...) where T
+function Base.getindex(gr::ReducedGroupedVariable{T},indices::TIndices...) where T
     gv = gr.gv
     sz = size_getindex(gr,indices...)
     data_by_class = Array{T}(undef,sz)

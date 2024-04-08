@@ -44,7 +44,7 @@ allowmissing(x::AbstractArray{T}) where {T} = convert(AbstractArray{Union{T, Mis
 
 
 
-function _filter(ncv::AbstractVariable, indices::Union{<:Integer,AbstractVector{<:Integer},Colon}...; accepted_status_flags = nothing)
+function _filter(ncv::AbstractVariable, indices...; accepted_status_flags = nothing)
     data = allowmissing(ncv[indices...])
 
     if (accepted_status_flags != nothing)

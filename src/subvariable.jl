@@ -65,7 +65,7 @@ end
 
 Base.Array(v::SubVariable) = collect(v)
 
-function Base.view(v::SubVariable,indices::Union{Int,Colon,AbstractVector{Int}}...)
+function Base.view(v::SubVariable,indices::Union{<:Integer,Colon,AbstractVector{<:Integer}}...)
     sub_indices = subsub(v.indices,indices)
     SubVariable(parent(v),sub_indices...)
 end
@@ -96,7 +96,7 @@ close(ds)
 ```
 
 """
-Base.view(v::AbstractVariable,indices::Union{Int,Colon,AbstractVector{Int}}...) = SubVariable(v,indices...)
+Base.view(v::AbstractVariable,indices::Union{<:Integer,Colon,AbstractVector{<:Integer}}...) = SubVariable(v,indices...)
 Base.view(v::SubVariable,indices::CartesianIndex) = view(v,indices.I...)
 Base.view(v::SubVariable,indices::CartesianIndices) = view(v,indices.indices...)
 

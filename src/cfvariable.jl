@@ -442,21 +442,21 @@ end
 #@inline CFinvtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DT) = CFtransform_replace_missing(data,fv)
 
 
-function Base.getindex(v::CFVariable, indexes::Union{Integer,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...)
+function Base.getindex(v::CFVariable, indexes::TIndices...)
     data = v.var[indexes...]
     return CFtransformdata(data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
                            time_origin(v),time_factor(v),maskingvalue(v),eltype(v))
 end
 
-function Base.setindex!(v::CFVariable,data::Array{Missing,N},indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where N
+function Base.setindex!(v::CFVariable,data::Array{Missing,N},indexes::TIndices...) where N
     v.var[indexes...] = fill(fillvalue(v),size(data))
 end
 
-function Base.setindex!(v::CFVariable,data::Missing,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
+function Base.setindex!(v::CFVariable,data::Missing,indexes::TIndices...)
     v.var[indexes...] = fillvalue(v)
 end
 
-function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where N where T <: Union{AbstractCFDateTime,DateTime,Union{Missing,DateTime,AbstractCFDateTime}}
+function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::TIndices...) where N where T <: Union{AbstractCFDateTime,DateTime,Union{Missing,DateTime,AbstractCFDateTime}}
 
     if calendar(v) !== nothing
         # can throw an convertion error if calendar attribute already exists and
@@ -473,7 +473,7 @@ function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{I
 end
 
 
-function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
+function Base.setindex!(v::CFVariable,data,indexes::TIndices...)
     v.var[indexes...] = CFinvtransformdata(
         data,fill_and_missing_values(v),
         scale_factor(v),add_offset(v),
@@ -602,7 +602,7 @@ NCDatasets.load!(ncv,data,buffer,:,:,:)
 close(ds)
 ```
 """
-@inline function load!(v::Union{CFVariable{T,N},MFCFVariable{T,N},SubVariable{T,N}}, data, buffer, indices::Union{Integer, AbstractRange{<:Integer}, Colon}...) where {T,N}
+@inline function load!(v::Union{CFVariable{T,N},MFCFVariable{T,N},SubVariable{T,N}}, data, buffer, indices::TIndices...) where {T,N}
 
     if v.var == nothing
         return load!(v,indices...)
