@@ -426,6 +426,9 @@ of `gv`) and `d` is an integer of the dimension overwhich one need to reduce
 `x`.
 """
 Base.reduce(f::Function,gv::GroupedVariable) = ReducedGroupedVariable(gv,f)
+Base.reduce(f::typeof(hcat),gv::GroupedVariable) = ReducedGroupedVariable(gv,f)
+Base.reduce(f::typeof(vcat),gv::GroupedVariable) = ReducedGroupedVariable(gv,f)
+
 Base.reduce(f::Function,gds::GroupedDataset) = ReducedGroupedDataset(gds,f)
 
 for fun in (:maximum, :mean, :median, :minimum, :std, :sum, :var)
