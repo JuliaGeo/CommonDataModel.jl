@@ -508,6 +508,11 @@ Base.broadcasted(f::Function,A,B::ReducedGroupedVariable) =
 Base.broadcasted(f::Function,A::ReducedGroupedVariable,B) =
     broadcasted_gvr!(similar(B),f,A,B)
 
+function Base.broadcasted(f::Function,A::ReducedGroupedVariable,B::ReducedGroupedVariable)
+    # undecided what to do
+    # method needs to be there to avoid ambiguities
+    error("unimplemented");
+end
 
 function Base.Array(gr::ReducedGroupedVariable)
     gr[ntuple(i -> Colon(),ndims(gr))...]
