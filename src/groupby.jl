@@ -264,7 +264,7 @@ function Base.similar(bc::Broadcasted{GroupedVariableStyle}, ::Type{ElType})  wh
     return A
 end
 
-function Base.broadcasted(f::Function,A::GroupedVariable{TV,TF,TGM,TM,TG}) where {TV,TF,TGM,TM,TG}
+function Base.broadcasted(::GroupedVariableStyle,f::Function,A::GroupedVariable{TV,TF,TGM,TM,TG}) where {TV,TF,TGM,TM,TG}
     # TODO change output TG
 
     map_fun = ∘(f,A.map_fun)
@@ -457,7 +457,10 @@ defAttrib(gr::ReducedGroupedVariable,attribname::SymbolOrString,value) =
     gr._attrib[attribname] = value
 
 struct ReducedGroupedVariableStyle <: BroadcastStyle end
+
 Base.BroadcastStyle(::Type{<:ReducedGroupedVariable}) = ReducedGroupedVariableStyle()
+Base.BroadcastStyle(::DefaultArrayStyle,::ReducedGroupedVariableStyle) = ReducedGroupedVariableStyle()
+Base.BroadcastStyle(::ReducedGroupedVariableStyle,::DefaultArrayStyle) = ReducedGroupedVariableStyle()
 
 function Base.similar(bc::Broadcasted{ReducedGroupedVariableStyle}, ::Type{ElType})  where ElType
     # Scan the inputs for the ReducedGroupedVariable:
@@ -503,12 +506,12 @@ function broadcasted_gvr!(C,f,A,B)
 end
 
 
-Base.broadcasted(f::Function,A,B::ReducedGroupedVariable) =
+Base.broadcasted(::ReducedGroupedVariableStyle,f::Function,A,B::ReducedGroupedVariable) =
     broadcasted_gvr!(similar(A),f,A,B)
-Base.broadcasted(f::Function,A::ReducedGroupedVariable,B) =
+Base.broadcasted(::ReducedGroupedVariableStyle,f::Function,A::ReducedGroupedVariable,B) =
     broadcasted_gvr!(similar(B),f,A,B)
 
-function Base.broadcasted(f::Function,A::ReducedGroupedVariable,B::ReducedGroupedVariable)
+function Base.broadcasted(::ReducedGroupedVariableStyle,f::Function,A::ReducedGroupedVariable,B::ReducedGroupedVariable)
     # undecided what to do
     # method needs to be there to avoid ambiguities
     error("unimplemented");
