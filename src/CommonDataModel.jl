@@ -1,6 +1,7 @@
 module CommonDataModel
 
-using Base.Broadcast: Broadcasted, BroadcastStyle
+using Base.Broadcast: Broadcasted, BroadcastStyle, DefaultArrayStyle
+
 using CFTime
 using Dates
 using Printf
