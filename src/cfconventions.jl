@@ -102,7 +102,7 @@ good_data = NCDatasets.filter(ds["data"],:,:, accepted_status_flags = ["good_dat
 filter(ncv::AbstractVariable, indices::TIndices...; kwargs...) =
     _filter(ncv, indices...; kwargs...)
 
-filter(ncv::AbstractVariable, indices::Vector{<:Integer}; kwargs...) =
+filter(ncv::AbstractVariable, indices::Union{Vector{<:Integer}, Array{<:CartesianIndex}}...; kwargs...) =
     _filter(ncv, indices...; kwargs...)
 
 filter(ncv::AbstractVariable, indices::BitVector; kwargs...) =

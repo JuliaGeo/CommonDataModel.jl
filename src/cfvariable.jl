@@ -441,7 +441,6 @@ end
 #@inline CFtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DTcast) = CFtransform_missing(data,fv)
 #@inline CFinvtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DT) = CFtransform_replace_missing(data,fv)
 
-
 function Base.getindex(v::CFVariable, indexes::TIndices...)
     data = v.var[indexes...]
     return CFtransformdata(data,fill_and_missing_values(v),scale_factor(v),add_offset(v),

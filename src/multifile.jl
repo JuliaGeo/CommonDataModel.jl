@@ -126,11 +126,6 @@ function MFDataset(TDS,fnames::AbstractArray{<:AbstractString,N},mode = "r"; agg
 end
 
 
-Base.getindex(v::Union{MFVariable,DeferVariable},ci::CartesianIndices) = v[ci.indices...]
-Base.setindex!(v::Union{MFVariable,DeferVariable},data,ci::CartesianIndices) = setindex!(v,data,ci.indices...)
-
-
-
 function close(mfds::MFDataset)
     close.(mfds.ds)
     return nothing
@@ -249,8 +244,8 @@ end
 dataset(v::Union{MFVariable,MFCFVariable}) = v.ds
 
 
-Base.getindex(v::MFCFVariable,ind...) = v.cfvar[ind...]
-Base.setindex!(v::MFCFVariable,data,ind...) = v.cfvar[ind...] = data
+Base.getindex(v::MFCFVariable,ind::TIndices...) = v.cfvar[ind...]
+Base.setindex!(v::MFCFVariable,data,ind::TIndices...) = v.cfvar[ind...] = data
 
 
 function Base.cat(vs::AbstractVariable...; dims::Integer)

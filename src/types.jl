@@ -1,7 +1,7 @@
 
 const SymbolOrString = Union{Symbol, AbstractString}
 
-const TIndices = Union{<:Integer,AbstractVector{<:Integer},AbstractArray{<:CartesianIndex}, CartesianIndex ,Colon}
+const TIndices = Union{<:Integer,AbstractVector{<:Integer},Colon}
 
 """
 

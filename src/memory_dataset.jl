@@ -2,7 +2,7 @@ import CommonDataModel as CDM
 
 Base.size(RA::ResizableArray) = size(RA.A)
 Base.getindex(RA::ResizableArray,inds...) = getindex(RA.A,inds...)
-Base.checkbounds(::Type{Bool},RA::ResizableArray,inds...) = all(minimum.(inds) .> 0)
+Base.checkbounds(::Type{Bool},RA::ResizableArray,inds::Union{Integer,AbstractVector{<:Integer}}...) = all(minimum.(inds) .> 0)
 
 function grow!(RA::ResizableArray{T,N},new_size) where {T,N}
     # grow
@@ -53,7 +53,7 @@ function grow_unlimited_dimension(ds,dname,len)
     end
 end
 
-Base.getindex(v::MemoryVariable,ij...) = v.data[ij...]
+Base.getindex(v::MemoryVariable,ij::TIndices...) = v.data[ij...]
 CDM.load!(v::MemoryVariable,buffer,ij...) = buffer .= view(v.data,ij...)
 
 function Base.setindex!(v::MemoryVariable,data,ij...)
