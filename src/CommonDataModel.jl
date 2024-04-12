@@ -8,6 +8,7 @@ using Printf
 using Preferences
 using DataStructures
 import Base:
+    LogicalIndex,
     checkbounds,
     close,
     collect,

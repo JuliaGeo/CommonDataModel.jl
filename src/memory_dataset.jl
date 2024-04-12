@@ -2,7 +2,17 @@ import CommonDataModel as CDM
 
 Base.size(RA::ResizableArray) = size(RA.A)
 Base.getindex(RA::ResizableArray,inds...) = getindex(RA.A,inds...)
-Base.checkbounds(::Type{Bool},RA::ResizableArray,inds::Union{Integer,AbstractVector{<:Integer}}...) = all(minimum.(inds) .> 0)
+
+@inline _checkbounds(RA::ResizableArray,inds...) = all(minimum.(inds) .> 0)
+
+@inline Base.checkbounds(::Type{Bool},RA::ResizableArray,inds::Union{Integer,AbstractVector{<:Integer}}...) =
+    _checkbounds(RA,inds...)
+
+@inline checkbounds(::Type{Bool}, itp::ResizableArray, inds::LogicalIndex) =
+    _checkbounds(RA,inds...)
+
+@inline checkbounds(::Type{Bool}, itp::ResizableArray, inds::LogicalIndex{<:Any,<:AbstractVector{Bool}})  =
+    _checkbounds(RA,inds...)
 
 function grow!(RA::ResizableArray{T,N},new_size) where {T,N}
     # grow
