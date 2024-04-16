@@ -285,3 +285,9 @@ data2 = zeros(Int,1)
 data2 = zeros(Int,10)
 # asking too many elements
 @test_throws BoundsError load!(ds["data"].var,data2,1:10)
+
+# issue 22
+filename = tempname()
+ds = TDS(filename, "c")
+v = defVar(ds, "a", Int32, ())
+@test ndims(Array(v)) == ndims(v) == 0

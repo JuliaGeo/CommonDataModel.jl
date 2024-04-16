@@ -567,6 +567,12 @@ fillmode(v::CFVariable) = fillmode(v.var)
 
 Base.Array(v::AbstractVariable{T,N}) where {T,N} = v[ntuple(i -> :, Val(N))...]
 
+function Base.Array(v::AbstractVariable{T,0}) where {T}
+    a = Array{T,0}(undef,size(v))
+    # only a single element to load
+    a .= v
+    return a
+end
 
 """
     CommonDataModel.load!(ncvar::CFVariable, data, buffer, indices)
