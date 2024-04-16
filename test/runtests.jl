@@ -34,3 +34,7 @@ end
     include("test_groupby.jl")
     include("test_rolling.jl")
 end
+
+@testset "aqua checks" begin
+    include("test_aqua.jl")
+end

@@ -455,7 +455,7 @@ function Base.setindex!(v::CFVariable,data::Missing,indexes::TIndices...)
     v.var[indexes...] = fillvalue(v)
 end
 
-function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::TIndices...) where N where T <: Union{AbstractCFDateTime,DateTime,Union{Missing,DateTime,AbstractCFDateTime}}
+function Base.setindex!(v::CFVariable,data::Union{T,Array{T}},indexes::TIndices...) where T <: Union{AbstractCFDateTime,DateTime,Missing}
 
     if calendar(v) !== nothing
         # can throw an convertion error if calendar attribute already exists and

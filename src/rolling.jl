@@ -11,8 +11,8 @@ end
 
 
 # multiple classes for overlapping groups
-struct MClass{N,TC}
-    class::NTuple{N,TC}
+struct MClass{T <: NTuple}
+    class::T
 end
 
 Base.length(mc::MClass) = 1
