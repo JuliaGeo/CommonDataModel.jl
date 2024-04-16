@@ -48,7 +48,7 @@ TDS(filename,"c") do ds
         v[:,:] = data
         @test v[:,:] == data[:,:]
 
-        # issue #33
+        # issue NCDatasets #33
         @test Array(v) == data
 
         @test v[2,:] == data[2,:]
@@ -177,7 +177,7 @@ TDS(filename,"c") do ds
     @test_throws KeyError ds["does_not_exist"]
 end
 
-# issue 23
+# issue NCDatasets 23
 # return type using CartesianIndex
 
 filename = tempname()
@@ -201,7 +201,7 @@ close(ds)
 
 @test typeof(data11[1]) == Int64
 
-# issue #36
+# issue NCDatasets #36
 
 x, y = collect(1:10), collect(10:18)
 
@@ -213,7 +213,7 @@ TDS(filename, "c") do ds
       defVar(ds, "y", y, ("y",))
 end
 
-# issue 155
+# issue NCDatasets 155
 
 filename = tempname()
 x = 1.:0.1:10.
@@ -224,7 +224,7 @@ ncv[:] = x
 ds.attrib["x_range"] = x
 close(ds)
 
-# issue 180
+# issue NCDatasets 180
 filename = tempname()
 ds = TDS(filename, "c")
 
@@ -247,7 +247,7 @@ for data = sample_data
 end
 close(ds)
 
-# issue 207
+# issue NCDatasets 207
 filename_src = tempname()
 ds_src = TDS(filename_src, "c")
 data = [DateTime(2000,1,1),DateTime(2000,1,2)]
@@ -265,7 +265,7 @@ v_dest[:] = v_dest[:] .+ Dates.Minute(30)
 close(ds_src)
 close(ds_dest)
 
-# issue 209
+# issue NCDatasets 209
 filename_src = tempname()
 ds = TDS(filename_src, "c")
 data = [1,2,3]
@@ -273,7 +273,7 @@ ncv = defVar(ds,"data",data,("data",))
 @test isempty(ncv[Int[]])
 close(ds)
 
-# issue 211
+# issue NCDatasets 211
 filename = tempname()
 ds = TDS(filename, "c")
 data = [1,2,3]
