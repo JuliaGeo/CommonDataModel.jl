@@ -389,7 +389,7 @@ ds = TDS(fname_subset)
 close(ds)
 
 
-# issue 196
+# issue NCDatasets 196
 
 time = DateTime(1000,1,1):Dates.Day(1):DateTime(2000,1,1)
 data = 1:length(time)
