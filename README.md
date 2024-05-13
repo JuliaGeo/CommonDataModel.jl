@@ -4,13 +4,25 @@
 [![documentation dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliageo.github.io/CommonDataModel.jl/dev/)
 
 
-This package contains abstracts type definition to ensure compatibility of the package [GRIBDatasets](https://github.com/JuliaGeo/GRIBDatasets.jl) and [NCDatasets](https://github.com/Alexander-Barth/NCDatasets.jl) for manipulating GRIB and NetCDF files. This package aims to follow the [Common Data Model](https://docs.unidata.ucar.edu/netcdf-c/current/netcdf_data_model.html) and the [CF (climate and forecast models) Metadata Conventions](https://cfconventions.org/).
+This package contains abstracts type definition for loading and manipulating GRIB, NetCDF, geoTiff and Zarr files. This package aims to follow the [Common Data Model](https://docs.unidata.ucar.edu/netcdf-c/current/netcdf_data_model.html) and the [CF (climate and forecast models) Metadata Conventions](https://cfconventions.org/).
+
+
+| Format  |      Package | read support | write support |
+|---------|--------------|:------------:|:-------------:|
+| NetCDF  | [`NCDatasets`](https://github.com/Alexander-Barth/NCDatasets.jl)     |            ✔ |             ✔ |
+| OPeNDAP | [`NCDatasets`](https://github.com/Alexander-Barth/NCDatasets.jl)     |            ✔ |             - |
+| GRIB    | [`GRIBDatasets`](https://github.com/JuliaGeo/GRIBDatasets.jl)        |            ✔ |             - |
+| geoTIFF | [`TIFFDatasets`](https://github.com/Alexander-Barth/TIFFDatasets.jl) |            ✔ |             - |
+| Zarr    | [`ZarrDatasets`](https://github.com/JuliaGeo/ZarrDatasets.jl)        |            ✔ |             ✔ |
+
 
 Features include:
 * query and edit metadata of arrays and datasets 
 * virtually concatenating multiple files along a given dimension
 * create a virtual subset (`view`) by indices or by values of coordinate variables (`CommonDataModel.select`, `CommonDataModel.@select`)
 * group, map and reduce a variable (`CommonDataModel.groupby`, `CommonDataModel.@groupby`) and rolling reductions like running means `CommonDataModel.rolling`)
+
+
 
 
 Here is minimal example for loading GRIB or NetCDF files.
@@ -40,8 +52,7 @@ close(ds)
 
  Most users would typically import [`GRIBDatasets`](https://github.com/JuliaGeo/GRIBDatasets.jl) and [`NCDatasets`](https://github.com/Alexander-Barth/NCDatasets.jl) directly and not `CommonDataModel`. One should import `CommonDataModel` only to extent the functionality of `GRIBDatasets` and `NCDatasets`.
 
-There is also an [`TIFFDatasets`](https://github.com/Alexander-Barth/TIFFDatasets.jl) package for GeoTIFF files and 
-[`ZarrDatasets`](https://github.com/JuliaGeo/ZarrDatasets.jl) package for Zarr datasets.
+
 
 # File conversions
 
