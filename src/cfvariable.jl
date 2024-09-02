@@ -384,6 +384,12 @@ end
     return CFtransformdata!(out,data,fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue)
 end
 
+# for arrays when the CF transformation does not change the element type
+# to avoid the allocation of a new array
+@inline function CFtransformdata(data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue,::Type{T}) where {T,N}
+    return CFtransformdata!(data,data,fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue)
+end
+
 @inline function CFtransformdata(
     data::AbstractArray{T,N},fv::Tuple{},scale_factor::Nothing,
     add_offset::Nothing,time_origin::Nothing,time_factor::Nothing,maskingvalue,::Type{T}) where {T,N}
