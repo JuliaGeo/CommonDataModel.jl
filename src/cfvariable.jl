@@ -381,7 +381,7 @@ end
 # for arrays
 @inline function CFtransformdata(data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue,DTcast) where {T,N}
     out = Array{DTcast,N}(undef,size(data))
-    return CFtransformdata!(out,data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue)
+    return CFtransformdata!(out,data,fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue)
 end
 
 @inline function CFtransformdata(
