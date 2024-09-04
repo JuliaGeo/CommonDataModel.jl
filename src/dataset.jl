@@ -280,7 +280,8 @@ function initboundsmap!(ds)
         v = variable(ds,vname)
         bounds = get(v.attrib,"bounds",nothing)
 
-        if bounds !== nothing
+        # see https://github.com/Alexander-Barth/NCDatasets.jl/issues/265
+        if bounds isa String
             ds._boundsmap[bounds] = vname
         end
     end
