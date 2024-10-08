@@ -33,7 +33,7 @@ sync(ds::AbstractDataset) = nothing
 All the subgroup names of the data set `ds`. For a data set containing
 only a single group, this will be an empty vector of `String`.
 """
-groupnames(ds::AbstractDataset) = ()
+groupnames(ds::AbstractDataset) = []
 
 
 """
