@@ -73,7 +73,7 @@ unlimited(ad::AbstractDataset) = ()
 
 Base.isopen(ds::AbstractDataset) = true
 
-
+iswritable(ds::AbstractDataset) = false
 
 function Base.show(io::IO,ds::AbstractDataset)
     level = get(io, :level, 0)
