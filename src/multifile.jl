@@ -50,7 +50,7 @@ function dimnames(ds::MFDataset)
     return k
 end
 
-unlimited(ds::MFDataset) = unique(reduce(hcat,unlimited.(ds.ds)))
+unlimited(ds::MFDataset) = unique(reduce(vcat,unlimited.(ds.ds)))
 
 groupnames(ds::MFDataset) = groupnames(ds.ds[1])
 
