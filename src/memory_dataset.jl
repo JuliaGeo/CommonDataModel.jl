@@ -118,7 +118,7 @@ CDM.attribnames(md::Union{MemoryDataset,MemoryVariable}) = keys(md._attrib)
 CDM.attrib(md::Union{MemoryDataset,MemoryVariable},name::SymbolOrString) = md._attrib[String(name)]
 
 
-CDM.groupnames(md::MemoryDataset) = keys(md._group)
+CDM.groupnames(md::MemoryDataset) = collect(keys(md._group))
 CDM.group(md::MemoryDataset,name::SymbolOrString) = md._group[String(name)]
 
 function CDM.defDim(md::MemoryDataset,name::SymbolOrString,len)

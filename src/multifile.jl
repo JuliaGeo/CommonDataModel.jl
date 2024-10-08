@@ -52,10 +52,12 @@ end
 
 unlimited(ds::MFDataset) = unique(reduce(vcat,unlimited.(ds.ds)))
 
-groupnames(ds::MFDataset) = groupnames(ds.ds[1])
+groupnames(ds::MFDataset) = unique(reduce(vcat,groupnames.(ds.ds)))
 
 function group(mfds::MFDataset,name::SymbolOrString)
-    ds = group.(mfds.ds,name)
+    ds_sel = filter(ds -> name in groupnames(ds),mfds.ds)
+
+    ds = group.(ds_sel,name)
     constvars = Symbol[]
     return MFDataset(ds,mfds.aggdim,mfds.isnewdim,constvars)
 end
@@ -84,7 +86,10 @@ function MFDataset(ds,aggdim,isnewdim,constvars)
 end
 
 
-function MFDataset(TDS,fnames::AbstractArray{<:AbstractString,N},mode = "r"; aggdim = nothing,
+# when aggdim is "", the variables list of each file is
+# merged and no variable is concatanted
+function MFDataset(TDS,fnames::AbstractArray{<:AbstractString,N},mode = "r";
+                   aggdim = nothing,
                    deferopen = true,
                    _aggdimconstant = false,
                    isnewdim = false,
@@ -124,6 +129,25 @@ function MFDataset(TDS,fnames::AbstractArray{<:AbstractString,N},mode = "r"; agg
     mfds = MFDataset(ds,aggdim,isnewdim,Symbol.(constvars))
     return mfds
 end
+
+"""
+    mfds = MFDataset(ds)
+
+Virtually concatente a vector of AbstractDataset (`ds`) by merging the list
+of variables. Every variable which happend to be repeated in several datasets
+is assumed to be constant accorss all datasets.
+"""
+function MFDataset(ds::AbstractVector{<:AbstractDataset};
+                   aggdim = nothing,
+                   deferopen = true,
+                   _aggdimconstant = false,
+                   isnewdim = false,
+                   constvars = Union{Symbol,String}[],
+                   )
+
+    MFDataset(ds,aggdim,isnewdim,Symbol.(constvars))
+end
+
 
 
 function close(mfds::MFDataset)
@@ -192,8 +216,9 @@ function variable(mfds::MFDataset,varname::SymbolOrString)
 
         if (dim != nothing)
             v = CatArrays.CatArray(dim,vars...)
+            # GRIBdatasets.dimnames can be a vector of String
             return MFVariable(mfds,v,
-                          dimnames(vars[1]),String(varname))
+                          Tuple(dimnames(vars[1])),String(varname))
         else
             return vars[1]
         end
