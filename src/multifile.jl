@@ -168,7 +168,7 @@ name(mfds::MFDataset) = name(mfds.ds[1])
 # to depreciate?
 groupname(mfds::MFDataset) = name(mfds.ds[1])
 
-function Base.keys(mfds::MFDataset)
+function varnames(mfds::MFDataset)
     if mfds.aggdim == ""
         return unique(Iterators.flatten(keys.(mfds.ds)))
     else

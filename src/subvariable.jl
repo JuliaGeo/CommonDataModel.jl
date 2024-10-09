@@ -170,7 +170,7 @@ function variable(ds::SubDataset,varname::Union{AbstractString, Symbol})
 end
 
 
-Base.keys(ds::SubDataset) = keys(ds.ds)
+varnames(ds::SubDataset) = keys(ds.ds)
 path(ds::SubDataset) = path(ds.ds)
 groupname(ds::SubDataset) = groupname(ds.ds)
 

@@ -1,6 +1,6 @@
 
 #import NCDatasets
-using CommonDataModel: subsub, SubDataset, SubVariable, chunking, deflate, path, @select
+using CommonDataModel: subsub, SubDataset, SubVariable, chunking, deflate, path, @select, varnames
 using DataStructures
 using Test
 
@@ -148,6 +148,11 @@ show(io,view(ncvar,:,:));
 indices = (lon = 3:4, lat = 1:3)
 
 sds = SubDataset(ds,indices)
+
+#test keys and varnames
+@test keys(ds) == varnames(ds)
+@test keys(sds) == varnames(sds)
+
 @test size(sds["lon"]) == (2,)
 @test size(sds["lat"]) == (3,)
 @test size(sds["bat"]) == (2,3)

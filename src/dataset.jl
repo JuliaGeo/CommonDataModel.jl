@@ -175,6 +175,9 @@ function Base.setindex!(ds::AbstractDataset,data::AbstractVariable,varname::Symb
     return defVar(ds, varname, data)
 end
 
+function Base.keys(ds::AbstractDataset) 
+    return varnames(ds)
+end
 
 function Base.haskey(ds::AbstractDataset,varname)
     return Symbol(varname) in Symbol.(keys(ds))

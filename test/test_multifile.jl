@@ -269,6 +269,7 @@ ds = TDS(fnames,aggdim = "", deferopen = false);
 
 ds_all = TDS.(fnames)
 mfds = CDM.MFDataset(ds_all,aggdim = "")
+@test keys(mfds) == CDM.varnames(mfds)
 @test sort(keys(mfds)) == ["ampl", "lat", "lon", "time", "vel"]
 
 # save a merged file
