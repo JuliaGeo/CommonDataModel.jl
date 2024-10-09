@@ -14,6 +14,11 @@ Base.getindex(RA::ResizableArray,inds...) = getindex(RA.A,inds...)
 @inline checkbounds(::Type{Bool}, itp::ResizableArray, inds::LogicalIndex{<:Any,<:AbstractVector{Bool}})  =
     _checkbounds(RA,inds...)
 
+# ambiguity julia 1.11
+@inline checkbounds(::Type{Bool}, itp::ResizableArray, inds::AbstractVector{Bool}) =
+    _checkbounds(RA,inds...)
+
+
 function grow!(RA::ResizableArray{T,N},new_size) where {T,N}
     # grow
     oldA = RA.A
