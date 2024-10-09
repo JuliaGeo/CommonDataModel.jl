@@ -81,7 +81,7 @@ end
 close(dds::DeferDataset) = nothing
 groupname(dds::DeferDataset) = dds.groupname
 path(dds::DeferDataset) = dds.r.filename
-Base.keys(dds::DeferDataset) = collect(keys(dds.data[:var]))
+varnames(dds::DeferDataset) = collect(keys(dds.data[:var]))
 
 function Variable(f::Function, dv::DeferVariable{T,N,TDS}) where {T,N,TDS}
     TDS(dv.r.filename,dv.r.mode) do ds
