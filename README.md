@@ -25,11 +25,11 @@ Features include:
 
 
 
-Here is minimal example for loading GRIB or NetCDF files.
+Here is minimal example for loading files using `CommonDataModel`:
 
 ``` julia
 import CommonDataModel as CDM
-import SomeDatasets # where SomeDatasets is either GRIBDatasets or NCDatasets
+import SomeDatasets # where SomeDatasets is either GRIBDatasets, NCDatasets, ZarrDatasets,...
 
 ds = SomeDatasets.Dataset("file_name")
 
@@ -50,23 +50,21 @@ title = ds.attrib["title"]  # or CDM.attribs(ds)["title"]
 close(ds)
 ```
 
- Most users would typically import [`GRIBDatasets`](https://github.com/JuliaGeo/GRIBDatasets.jl) and [`NCDatasets`](https://github.com/Alexander-Barth/NCDatasets.jl) directly and not `CommonDataModel`. One should import `CommonDataModel` only to extent the functionality of `GRIBDatasets` and `NCDatasets`.
-
-
+Most users would typically import [`GRIBDatasets`](https://github.com/JuliaGeo/GRIBDatasets.jl), [`NCDatasets`](https://github.com/Alexander-Barth/NCDatasets.jl)... directly and not `CommonDataModel`.
 
 # File conversions
 
-By implementing a common interface, GRIB files can be converted to NetCDF files using
-`NCDatasets.write`:
+By implementing a common interface, files can be converted from one format to another using the `write` function.
+For example GRIB files can be converted to NetCDF (or Zarr) files:
 
 ```julia
-using NCDatasets
+using NCDatasets # or ZarrDatasets
 using GRIBDatasets
 using Downloads: download
 
 grib_file = download("https://github.com/JuliaGeo/GRIBDatasets.jl/raw/98356af026ea39a5ec0b5e64e4289105492321f8/test/sample-data/era5-levels-members.grib")
 netcdf_file = "test.nc"
 NCDataset(netcdf_file,"c") do ds
-   NCDatasets.write(ds,GRIBDataset(grib_file))
+   write(ds,GRIBDataset(grib_file))
 end
 ```
