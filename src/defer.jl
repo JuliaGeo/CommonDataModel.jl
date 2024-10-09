@@ -62,11 +62,9 @@ function DeferDataset(TDS,r::Resource,groupname::String,data::OrderedDict)
 end
 
 function DeferDataset(TDS,filename::AbstractString,mode::AbstractString,info::OrderedDict)
-    TDS(filename,mode) do ds
-        r = Resource(filename,mode,info)
-        groupname = "/"
-        return DeferDataset(TDS,r,groupname,info)
-    end
+    r = Resource(filename,mode,info)
+    groupname = "/"
+    return DeferDataset(TDS,r,groupname,info)
 end
 
 function DeferDataset(TDS,filename::AbstractString,mode = "r")
