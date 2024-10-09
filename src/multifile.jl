@@ -130,13 +130,6 @@ function MFDataset(TDS,fnames::AbstractArray{<:AbstractString,N},mode = "r";
     return mfds
 end
 
-"""
-    mfds = MFDataset(ds)
-
-Virtually concatente a vector of AbstractDataset (`ds`) by merging the list
-of variables. Every variable which happend to be repeated in several datasets
-is assumed to be constant accorss all datasets.
-"""
 function MFDataset(ds::AbstractVector{<:AbstractDataset};
                    aggdim = nothing,
                    deferopen = true,
@@ -148,7 +141,14 @@ function MFDataset(ds::AbstractVector{<:AbstractDataset};
     MFDataset(ds,aggdim,isnewdim,Symbol.(constvars))
 end
 
+"""
+    mfds = merge(ds1, ds2...)
 
+Virtually merge all datasets (`ds1`,...) by concatenating the list
+of variables. Every variable which happend to be repeated in several datasets
+is should to be constant in all datasets.
+"""
+Base.merge(ds::AbstractDataset...) = MFDataset(collect(ds); aggdim = "")
 
 function close(mfds::MFDataset)
     close.(mfds.ds)
