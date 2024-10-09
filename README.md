@@ -18,7 +18,7 @@ This package contains abstracts type definition for loading and manipulating GRI
 
 Features include:
 * query and edit metadata of arrays and datasets 
-* virtually concatenating multiple files along a given dimension
+* virtually concatenating multiple files along a given dimension and merging virtually different datasets
 * create a virtual subset (`view`) by indices or by values of coordinate variables (`CommonDataModel.select`, `CommonDataModel.@select`)
 * group, map and reduce a variable (`CommonDataModel.groupby`, `CommonDataModel.@groupby`) and rolling reductions like running means `CommonDataModel.rolling`)
 
