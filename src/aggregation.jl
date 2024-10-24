@@ -27,11 +27,29 @@ end
     return VarianceWelfordAggregation{Ti,T}(count, mean, M2)
 end
 
-function result(ag::VarianceWelfordAggregation)
-    sample_variance = ag.M2 / (ag.count - 1)
+Base.count(ag::VarianceWelfordAggregation) = ag.count
+
+function Statistics.mean(ag::VarianceWelfordAggregation{Ti,T}) where {Ti,T}
+    if ag.count > 0
+        return ag.mean
+    else
+        # NaN of the right kind
+        return zero(T) / 0
+    end
+end
+
+function Statistics.var(ag::VarianceWelfordAggregation{Ti,T}) where {Ti,T}
+    if ag.count > 1
+        sample_variance = ag.M2 / (ag.count - 1)
+    else
+        # ag.count is 0 or 1
+        # NaN of the right kind
+        sample_variance = zero(T) / 0
+    end
     return sample_variance
 end
 
+result(ag::VarianceWelfordAggregation) = var(ag)
 
 
 for (funAggregation,fun) in ((:MaxAggregation,max),(:MinAggregation,min))
