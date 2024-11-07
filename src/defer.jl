@@ -4,7 +4,7 @@ function metadata(ds::AbstractDataset)
     # dimensions
 
     dim = OrderedDict()
-    unlimited_dims = unlimited(ds.dim)
+    unlimited_dims = unlimited(ds)
 
     for (dimname,dimlen) in ds.dim
         dim[dimname] = Dict(
