@@ -175,7 +175,7 @@ function Base.setindex!(ds::AbstractDataset,data::AbstractVariable,varname::Symb
     return defVar(ds, varname, data)
 end
 
-function Base.keys(ds::AbstractDataset) 
+function Base.keys(ds::AbstractDataset)
     return varnames(ds)
 end
 
@@ -248,7 +248,7 @@ function Base.getindex(ds::Union{AbstractDataset,AbstractVariable},n::CFStdName)
     if length(ncvars) == 1
         return ncvars[1]
     else
-        throw(KeyError("$(length(ncvars)) matches while searching for a variable with standard_name attribute equal to $(n.name)"))
+        throw(KeyError("variable with standard_name attribute equal to $(n.name) ($(length(ncvars)) matches)"))
     end
 end
 
