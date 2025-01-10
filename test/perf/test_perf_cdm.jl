@@ -11,11 +11,13 @@ ds = NCDataset(fname)
 
 data_f64 = Float64.(ds[:data][:,:,:])
 
-println("runtime")
+println("runtime of mean")
 gm = @btime begin
     write("/proc/sys/vm/drop_caches","3")
     mean(@groupby(ds[:data],Dates.Month(time)))[:,:,:];
 end
+
+println("runtime of std")
 
 # Welford
 gs = @btime begin
