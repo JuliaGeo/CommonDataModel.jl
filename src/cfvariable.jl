@@ -370,7 +370,7 @@ end
     CFtransform(data,fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue,DTcast)
 
 # in-place version
-@inline function CFtransformdata!(out,data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue) where {T,N}
+function CFtransformdata!(out,data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue) where {T,N}
     DTcast = eltype(out)
     @inbounds @simd for i in eachindex(data)
         out[i] = CFtransform(data[i],fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue,DTcast)
@@ -387,6 +387,8 @@ end
 # for arrays when the CF transformation does not change the element type
 # to avoid the allocation of a new array
 @inline function CFtransformdata(data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue,::Type{T}) where {T,N}
+    @show typeof(data)
+
     return CFtransformdata!(data,data,fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue)
 end
 
