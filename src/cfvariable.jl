@@ -370,7 +370,7 @@ end
     CFtransform(data,fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue,DTcast)
 
 # in-place version
-@inline function CFtransformdata!(out,data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue) where {T,N}
+function CFtransformdata!(out,data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue) where {T,N}
     DTcast = eltype(out)
     @inbounds @simd for i in eachindex(data)
         out[i] = CFtransform(data[i],fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue,DTcast)
