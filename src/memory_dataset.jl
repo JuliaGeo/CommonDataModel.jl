@@ -70,7 +70,6 @@ end
 
 Base.parent(v::MemoryVariable) = v.data
 Base.size(v::MemoryVariable) = size(parent(v))
-Base.size(v::MemoryVariable) = size(parent(v))
 Base.getindex(v::MemoryVariable,ij::TIndices...) = parent(v)[ij...]
 function Base.setindex!(v::MemoryVariable,data,ij...)
     sz = size(v)
