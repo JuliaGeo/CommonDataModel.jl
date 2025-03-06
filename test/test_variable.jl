@@ -5,6 +5,7 @@ using Printf
 #using NCDatasets: NetCDFError, load!
 using DataStructures
 using CFTime
+using CommonDataModel
 using CommonDataModel:
     MemoryDataset,
     name,
@@ -27,6 +28,8 @@ TDS(filename,"c") do ds
     ds.dim["lat"] = sz[2]
 
     v = defVar(ds,"small",Float64,("lon","lat"))
+    @test parent(v) isa CommonDataModel.MemoryVariable
+    @test parent(parent(v)) isa Array
 #    @test_throws Union{NetCDFError,DimensionMismatch} v[:] = zeros(sz[1]+1,sz[2])
     @test_throws DimensionMismatch v[1:sz[1],1:sz[2]] = zeros(sz[1]+1,sz[2])
     @test_throws BoundsError v[sz[1]+1,1] = 1
