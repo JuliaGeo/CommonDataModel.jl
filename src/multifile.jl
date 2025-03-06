@@ -72,8 +72,6 @@ function parentdataset(mfds::MFDataset)
     end
 end
 
-Base.Array(v::MFVariable) = Array(v.var)
-
 iswritable(mfds::MFDataset) = iswritable(mfds.ds[1])
 
 function MFDataset(ds,aggdim,isnewdim,constvars)
@@ -176,17 +174,22 @@ function varnames(mfds::MFDataset)
     end
 end
 
-Base.getindex(v::MFVariable,indexes::TIndices...) = getindex(v.var,indexes...)
-Base.setindex!(v::MFVariable,data,indexes::TIndices...) = setindex!(v.var,data,indexes...)
+Base.parent(v::MFVariable) = v.var
+Base.parent(v::MFCFVariable) = v.var
+Base.Array(v::MFVariable) = Array(parent(v))
+Base.getindex(v::MFVariable,indexes::TIndices...) = getindex(parent(v),indexes...)
+Base.setindex!(v::MFVariable,data,indexes::TIndices...) = setindex!(parent(v),data,indexes...)
+Base.size(v::MFVariable) = size(parent(v))
+Base.size(v::MFCFVariable) = size(parent(v))
+Base.getindex(v::MFCFVariable,ind::TIndices...) = v.cfvar[ind...]
+Base.setindex!(v::MFCFVariable,data,ind::TIndices...) = v.cfvar[ind...] = data
+function Base.cat(vs::AbstractVariable...; dims::Integer)
+    CatArrays.CatArray(dims,vs...)
+end
 
-
-load!(v::MFVariable,buffer,indexes...) = CatArrays.load!(v.var,buffer,indexes...)
-
-Base.size(v::MFVariable) = size(v.var)
-Base.size(v::MFCFVariable) = size(v.var)
+load!(v::MFVariable,buffer,indexes...) = CatArrays.load!(parent(v),buffer,indexes...)
 dimnames(v::MFVariable) = v.dimnames
 name(v::MFVariable) = v.varname
-
 
 function variable(mfds::MFDataset,varname::SymbolOrString)
     if mfds.isnewdim
@@ -268,15 +271,6 @@ end
 
 dataset(v::Union{MFVariable,MFCFVariable}) = v.ds
 
-
-Base.getindex(v::MFCFVariable,ind::TIndices...) = v.cfvar[ind...]
-Base.setindex!(v::MFCFVariable,data,ind::TIndices...) = v.cfvar[ind...] = data
-
-
-function Base.cat(vs::AbstractVariable...; dims::Integer)
-    CatArrays.CatArray(dims,vs...)
-end
-
 """
     storage,chunksizes = chunking(v::MFVariable)
     storage,chunksizes = chunking(v::MFCFVariable)
@@ -299,6 +293,6 @@ end
 deflate(v::MFVariable) = deflate(v.ds.ds[1][name(v)])
 checksum(v::MFVariable) = checksum(v.ds.ds[1][name(v)])
 
-chunking(v::MFCFVariable) = chunking(v.var)
-deflate(v::MFCFVariable) = deflate(v.var)
-checksum(v::MFCFVariable) = checksum(v.var)
+chunking(v::MFCFVariable) = chunking(parent(v))
+deflate(v::MFCFVariable) = deflate(parent(v))
+checksum(v::MFCFVariable) = checksum(parent(v))
