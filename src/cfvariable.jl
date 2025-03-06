@@ -11,20 +11,21 @@ Return a tuple of integers with the size of the variable `var`.
     Note that the size of a variable can change, i.e. for a variable with an
     unlimited dimension.
 """
-Base.size(v::CFVariable) = size(v.var)
+Base.size(v::CFVariable) = size(parent(v))
+Base.parent(v::CFVariable) = v.var
 
-name(v::CFVariable) = name(v.var)
-dataset(v::CFVariable) = dataset(v.var)
+name(v::CFVariable) = name(parent(v))
+dataset(v::CFVariable) = dataset(parent(v))
 
 
-# be aware that for GRIBDatasets v.attrib is different from v.var.attrib
+# be aware that for GRIBDatasets v.attrib is different from parent(v).attrib
 attribnames(v::CFVariable) = keys(v.attrib)
 attrib(v::CFVariable,name::SymbolOrString) = v.attrib[name]
 defAttrib(v::CFVariable,name,value) = v.attrib[name] = value
 delAttrib(v::CFVariable,name) = delete!(v,name)
 
-dimnames(v::CFVariable) = dimnames(v.var)
-dim(v::CFVariable,name::SymbolOrString) = dim(v.var,name)
+dimnames(v::CFVariable) = dimnames(parent(v))
+dim(v::CFVariable,name::SymbolOrString) = dim(parent(v),name)
 
 # necessary for IJulia if showing a variable from a closed file
 Base.show(io::IO,::MIME"text/plain",v::AbstractVariable) = show(io,v)
@@ -215,7 +216,7 @@ missing_values(v::CFVariable) = v._storage_attrib.missing_values
 
 # collect all possible fill values
 function fill_and_missing_values(v::CFVariable)
-    T = eltype(v.var)
+    T = eltype(parent(v))
     fv = ()
     if !isnothing(fillvalue(v))
         fv = (fillvalue(v),)
@@ -448,17 +449,17 @@ end
 #@inline CFinvtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DT) = CFtransform_replace_missing(data,fv)
 
 function Base.getindex(v::CFVariable, indexes::TIndices...)
-    data = v.var[indexes...]
+    data = parent(v)[indexes...]
     return CFtransformdata(data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
                            time_origin(v),time_factor(v),maskingvalue(v),eltype(v))
 end
 
 function Base.setindex!(v::CFVariable,data::Array{Missing,N},indexes::TIndices...) where N
-    v.var[indexes...] = fill(fillvalue(v),size(data))
+    parent(v)[indexes...] = fill(fillvalue(v),size(data))
 end
 
 function Base.setindex!(v::CFVariable,data::Missing,indexes::TIndices...)
-    v.var[indexes...] = fillvalue(v)
+    parent(v)[indexes...] = fillvalue(v)
 end
 
 function Base.setindex!(v::CFVariable,data::Union{T,Array{T}},indexes::TIndices...) where T <: Union{AbstractCFDateTime,DateTime,Missing}
@@ -466,11 +467,11 @@ function Base.setindex!(v::CFVariable,data::Union{T,Array{T}},indexes::TIndices.
     if calendar(v) !== nothing
         # can throw an convertion error if calendar attribute already exists and
         # is incompatible with the provided data
-        v.var[indexes...] = CFinvtransformdata(
+        parent(v)[indexes...] = CFinvtransformdata(
             data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
             time_origin(v),time_factor(v),
             maskingvalue(v),
-            eltype(v.var))
+            eltype(parent(v)))
         return data
     end
 
@@ -479,12 +480,12 @@ end
 
 
 function Base.setindex!(v::CFVariable,data,indexes::TIndices...)
-    v.var[indexes...] = CFinvtransformdata(
+    parent(v)[indexes...] = CFinvtransformdata(
         data,fill_and_missing_values(v),
         scale_factor(v),add_offset(v),
         time_origin(v),time_factor(v),
         maskingvalue(v),
-        eltype(v.var))
+        eltype(parent(v)))
 
     return data
 end
@@ -551,20 +552,20 @@ end
 
 Return a tuple of strings with the dimension names of the variable `v`.
 """
-dimnames(v::Union{CFVariable,MFCFVariable}) = dimnames(v.var)
+dimnames(v::Union{CFVariable,MFCFVariable}) = dimnames(parent(v))
 
-name(v::Union{CFVariable,MFCFVariable}) = name(v.var)
-chunking(v::CFVariable,storage,chunksize) = chunking(v.var,storage,chunksize)
-chunking(v::CFVariable) = chunking(v.var)
+name(v::Union{CFVariable,MFCFVariable}) = name(parent(v))
+chunking(v::CFVariable,storage,chunksize) = chunking(parent(v),storage,chunksize)
+chunking(v::CFVariable) = chunking(parent(v))
 
-deflate(v::CFVariable,shuffle,dodeflate,deflate_level) = deflate(v.var,shuffle,dodeflate,deflate_level)
-deflate(v::CFVariable) = deflate(v.var)
+deflate(v::CFVariable,shuffle,dodeflate,deflate_level) = deflate(parent(v),shuffle,dodeflate,deflate_level)
+deflate(v::CFVariable) = deflate(parent(v))
 
-checksum(v::CFVariable,checksummethod) = checksum(v.var,checksummethod)
-checksum(v::CFVariable) = checksum(v.var)
+checksum(v::CFVariable,checksummethod) = checksum(parent(v),checksummethod)
+checksum(v::CFVariable) = checksum(parent(v))
 
 
-fillmode(v::CFVariable) = fillmode(v.var)
+fillmode(v::CFVariable) = fillmode(parent(v))
 
 
 ############################################################
@@ -585,7 +586,7 @@ end
 
 Loads a NetCDF (or other format) variables `ncvar` in-place and puts the result in `data` (an
 array of `eltype(ncvar)`) along the specified `indices`. `buffer` is a temporary
- array of the same size as data but the type should be `eltype(ncv.var)`, i.e.
+ array of the same size as data but the type should be `eltype(parent(ncv))`, i.e.
 the corresponding type in the files (before applying `scale_factor`,
 `add_offset` and masking fill values). Scaling and masking will be applied to
 the array `data`.
@@ -608,17 +609,17 @@ ds = Dataset("file.nc")
 ncv = ds["vgos"];
 # data and buffer must have the right shape and type
 data = zeros(eltype(ncv),size(ncv)); # here Vector{Float64}
-buffer = zeros(eltype(ncv.var),size(ncv)); # here Vector{Int16}
+buffer = zeros(eltype(parent(ncv)),size(ncv)); # here Vector{Int16}
 NCDatasets.load!(ncv,data,buffer,:,:,:)
 close(ds)
 ```
 """
 @inline function load!(v::Union{CFVariable{T,N},MFCFVariable{T,N},SubVariable{T,N}}, data, buffer, indices::TIndices...) where {T,N}
 
-    if v.var == nothing
+    if parent(v) == nothing
         return load!(v,indices...)
     else
-        load!(v.var,buffer,indices...)
+        load!(parent(v),buffer,indices...)
         fmv = fill_and_missing_values(v)
         return CFtransformdata!(data,buffer,fmv,scale_factor(v),add_offset(v),
                                 time_origin(v),time_factor(v),

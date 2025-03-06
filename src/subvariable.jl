@@ -1,18 +1,18 @@
 
 Base.parent(v::SubVariable) = v.parent
 Base.parentindices(v::SubVariable) = v.indices
-Base.size(v::SubVariable) = _shape_after_slice(size(v.parent),v.indices...)
+Base.size(v::SubVariable) = _shape_after_slice(size(parent(v)),v.indices...)
 
 function dimnames(v::SubVariable)
-    dimension_names = dimnames(v.parent)
+    dimension_names = dimnames(parent(v))
     return dimension_names[map(i -> !(i isa Integer),collect(v.indices))]
 end
 
-name(v::SubVariable) = name(v.parent)
+name(v::SubVariable) = name(parent(v))
 
-attribnames(v::SubVariable) = attribnames(v.parent)
-attrib(v::SubVariable,name::SymbolOrString) = attrib(v.parent,name)
-defAttrib(v::SubVariable,name::SymbolOrString,data) = defAttrib(v.parent,name,data)
+attribnames(v::SubVariable) = attribnames(parent(v))
+attrib(v::SubVariable,name::SymbolOrString) = attrib(parent(v),name)
+defAttrib(v::SubVariable,name::SymbolOrString,data) = defAttrib(parent(v),name,data)
 
 function SubVariable(A::AbstractVariable,indices...)
     var = nothing
@@ -46,7 +46,7 @@ valid indices `parentindices` and `indices`
 =#
 subsub(parentindices,indices) = _subsub((),indices,1,parentindices...)
 
-materialize(v::SubVariable) = v.parent[v.indices...]
+materialize(v::SubVariable) = parent(v)[v.indices...]
 
 """
 collect always returns an array.
@@ -56,10 +56,10 @@ into a zero-dimensional array.
 function collect(v::SubVariable{T,N}) where T where N
     if N == 0
         A = Array{T,0}(undef,())
-        A[] = v.parent[v.indices...]
+        A[] = parent(v)[v.indices...]
         return A
     else
-        return v.parent[v.indices...]
+        return parent(v)[v.indices...]
     end
 end
 
@@ -108,7 +108,7 @@ Base.getindex(v::SubVariable,indices::CartesianIndices) =
 
 function Base.setindex!(v::SubVariable,data,indices...)
     sub_indices = subsub(v.indices,indices)
-    v.parent[sub_indices...] = data
+    parent(v)[sub_indices...] = data
 end
 
 Base.setindex!(v::SubVariable,data,indices::CartesianIndex) =
@@ -176,14 +176,14 @@ groupname(ds::SubDataset) = groupname(ds.ds)
 
 
 function dataset(v::SubVariable)
-    indices = (;((Symbol(d),i) for (d,i) in zip(dimnames(v.parent),v.indices))...)
-    return SubDataset(dataset(v.parent),indices)
+    indices = (;((Symbol(d),i) for (d,i) in zip(dimnames(parent(v)),v.indices))...)
+    return SubDataset(dataset(parent(v)),indices)
 end
 
 function chunking(v::SubVariable)
-    storage, chunksizes = chunking(v.parent)
+    storage, chunksizes = chunking(parent(v))
     return storage, min.(chunksizes,size(v))
 end
 
-deflate(v::SubVariable) = deflate(v.parent)
-checksum(v::SubVariable) = checksum(v.parent)
+deflate(v::SubVariable) = deflate(parent(v))
+checksum(v::SubVariable) = checksum(parent(v))
