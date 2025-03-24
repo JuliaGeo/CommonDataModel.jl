@@ -244,10 +244,20 @@ for Tbase in (UInt8, Int8, Float32, Float64, Int64, Char, String)
                 []
             end
 
+        _maskingvalue_promoted =
+            if (Tbase <: Number) && (_maskingvalue isa Number)
+                # for example promote NaN32 if scaling factor is a Flaot64 to NaN
+                1. * _maskingvalue
+            else
+                _maskingvalue
+            end
+
         ncv = defVar(ds,"data",data,("lon","lat"),fillvalue = fv, attrib = varattrib)
         @test CDM.maskingvalue(ds) === _maskingvalue
         @test ncv.var[2,2] == fv
-        @test ncv[2,2] === _maskingvalue
+
+        @test ncv[2,2] === _maskingvalue_promoted
+
         if Tbase <: Number
             @test ncv.var[1,1] * scale_factor + add_offset ≈ data[1,1]
             @test ncv[1,1] ≈ data[1,1]
