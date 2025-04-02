@@ -61,16 +61,16 @@ function DeferDataset(TDS,r::Resource,groupname::String,data::OrderedDict)
    return dds
 end
 
-function DeferDataset(TDS,filename::AbstractString,mode::AbstractString,info::OrderedDict)
-    r = Resource(filename,mode,info)
+function DeferDataset(TDS,filename::AbstractString,mode::AbstractString,info::OrderedDict; kwargs...)
+    r = Resource(filename,mode,Dict(kwargs),info)
     groupname = "/"
     return DeferDataset(TDS,r,groupname,info)
 end
 
-function DeferDataset(TDS,filename::AbstractString,mode = "r")
+function DeferDataset(TDS,filename::AbstractString,mode = "r"; kwargs...)
     TDS(filename,mode) do ds
         info = metadata(ds)
-        r = Resource(filename,mode,info)
+        r = Resource(filename,mode,Dict(kwargs),info)
         groupname = "/"
         return DeferDataset(TDS,r,groupname,info)
     end
@@ -84,7 +84,7 @@ path(dds::DeferDataset) = dds.r.filename
 varnames(dds::DeferDataset) = collect(keys(dds.data[:var]))
 
 function Variable(f::Function, dv::DeferVariable{T,N,TDS}) where {T,N,TDS}
-    TDS(dv.r.filename,dv.r.mode) do ds
+    TDS(dv.r.filename,dv.r.mode; dv.r.args...) do ds
         f(variable(ds,dv.varname))
     end
 end
@@ -103,7 +103,7 @@ end
 variable(dds::DeferDataset,varname::Symbol) = variable(dds,string(varname))
 
 dataset(dv::DeferVariable{T,N,TDS}) where {T,N,TDS} =
-    DeferDataset(TDS,dv.r.filename,dv.r.mode)
+    DeferDataset(TDS,dv.r.filename,dv.r.mode; dv.r.args...)
 
 function Base.getindex(dv::DeferVariable,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
     Variable(dv) do v

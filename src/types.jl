@@ -136,6 +136,7 @@ end
 struct Resource
     filename::String
     mode::String
+    args::Dict{Symbol,Any}
     metadata::OrderedDict
 end
 

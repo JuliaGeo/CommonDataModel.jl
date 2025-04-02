@@ -92,6 +92,7 @@ function MFDataset(TDS,fnames::AbstractArray{<:AbstractString,N},mode = "r";
                    _aggdimconstant = false,
                    isnewdim = false,
                    constvars = Union{Symbol,String}[],
+                   kwargs...
                    ) where N
     if !(mode == "r" || mode == "a")
         throw(ArgumentError("""Unsupported mode for multi-file dataset (mode = $(mode)). Mode must be "r" or "a"."""))
@@ -103,20 +104,20 @@ function MFDataset(TDS,fnames::AbstractArray{<:AbstractString,N},mode = "r";
         if _aggdimconstant
             # load only metadata from master
             master_index = 1
-            ds_master = TDS(fnames[master_index],mode);
+            ds_master = TDS(fnames[master_index],mode; kwargs...);
             data_master = metadata(ds_master)
             ds = Vector{Union{TDS,DeferDataset}}(undef,length(fnames))
             #ds[master_index] = ds_master
             for (i,fname) in enumerate(fnames)
                 #if i !== master_index
-                ds[i] = DeferDataset(TDS,fname,mode,data_master)
+                ds[i] = DeferDataset(TDS,fname,mode,data_master; kwargs...)
                 #end
             end
         else
-            ds = DeferDataset.(TDS,fnames,mode)
+            ds = DeferDataset.(TDS,fnames,mode; kwargs...)
         end
     else
-        ds = TDS.(fnames,mode);
+        ds = TDS.(fnames,mode,kwargs...);
     end
 
     if (aggdim == nothing) && !isnewdim
@@ -133,7 +134,7 @@ function MFDataset(ds::AbstractVector{<:AbstractDataset};
                    deferopen = true,
                    _aggdimconstant = false,
                    isnewdim = false,
-                   constvars = Union{Symbol,String}[],
+                   constvars = Union{Symbol,String}[]
                    )
 
     MFDataset(ds,aggdim,isnewdim,Symbol.(constvars))
