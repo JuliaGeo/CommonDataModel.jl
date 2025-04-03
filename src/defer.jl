@@ -83,6 +83,12 @@ groupname(dds::DeferDataset) = dds.groupname
 path(dds::DeferDataset) = dds.r.filename
 varnames(dds::DeferDataset) = collect(keys(dds.data[:var]))
 
+function maskingvalue(dds::DeferDataset{TDS}) where TDS
+    TDS(dds.r.filename,dds.r.mode; dds.r.args...) do ds
+        maskingvalue(ds)
+    end
+end
+
 function Variable(f::Function, dv::DeferVariable{T,N,TDS}) where {T,N,TDS}
     TDS(dv.r.filename,dv.r.mode; dv.r.args...) do ds
         f(variable(ds,dv.varname))

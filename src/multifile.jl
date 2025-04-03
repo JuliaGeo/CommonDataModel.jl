@@ -175,6 +175,9 @@ function varnames(mfds::MFDataset)
     end
 end
 
+maskingvalue(mfds::MFDataset) = maskingvalue(mfds.ds[1])
+
+
 Base.parent(v::MFVariable) = v.var
 Base.parent(v::MFCFVariable) = v.var
 Base.Array(v::MFVariable) = Array(parent(v))
