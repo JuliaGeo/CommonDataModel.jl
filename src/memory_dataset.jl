@@ -68,12 +68,12 @@ function grow_unlimited_dimension(ds,dname,len)
     end
 end
 
-Base.getindex(v::MemoryVariable,ij::TIndices...) = v.data[ij...]
-CDM.load!(v::MemoryVariable,buffer,ij...) = buffer .= view(v.data,ij...)
-
+Base.parent(v::MemoryVariable) = v.data
+Base.size(v::MemoryVariable) = size(parent(v))
+Base.getindex(v::MemoryVariable,ij::TIndices...) = parent(v)[ij...]
 function Base.setindex!(v::MemoryVariable,data,ij...)
-    sz = size(v.data)
-    v.data[ij...] = data
+    sz = size(v)
+    parent(v)[ij...] = data
 
     root = _root(v)
     for idim = findall(size(v) .> sz)
@@ -82,7 +82,8 @@ function Base.setindex!(v::MemoryVariable,data,ij...)
     end
     return data
 end
-Base.size(v::MemoryVariable) = size(v.data)
+
+CDM.load!(v::MemoryVariable,buffer,ij...) = buffer .= view(parent(v),ij...)
 CDM.name(v::Union{MemoryVariable,MemoryDataset}) = v.name
 CDM.dimnames(v::MemoryVariable) = v.dimnames
 CDM.dataset(v::MemoryVariable) = v.parent_dataset
