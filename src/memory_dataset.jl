@@ -70,10 +70,24 @@ end
 
 Base.parent(v::MemoryVariable) = v.data
 Base.size(v::MemoryVariable) = size(parent(v))
-Base.getindex(v::MemoryVariable,ij::TIndices...) = parent(v)[ij...]
-function Base.setindex!(v::MemoryVariable,data,ij...)
+
+function DiskArrays.readblock!(v::MemoryVariable{T, N},
+    aout,
+    indexes::Vararg{OrdinalRange, N}) where {T, N}
+
+    aout .= parent(v)[indexes...]
+end
+
+
+function DiskArrays.writeblock!(v::MemoryVariable{T, 0}, data, indexes::Vararg{OrdinalRange, 0}) where {T}
+    parent(v)[] = data[]
+    return data
+end
+
+
+function DiskArrays.writeblock!(v::MemoryVariable{T, N}, data, indexes::Vararg{OrdinalRange, N}) where {T, N}
     sz = size(v)
-    parent(v)[ij...] = data
+    parent(v)[indexes...] = data
 
     root = _root(v)
     for idim = findall(size(v) .> sz)
@@ -82,6 +96,7 @@ function Base.setindex!(v::MemoryVariable,data,ij...)
     end
     return data
 end
+
 
 CDM.load!(v::MemoryVariable,buffer,ij...) = buffer .= view(parent(v),ij...)
 CDM.name(v::Union{MemoryVariable,MemoryDataset}) = v.name

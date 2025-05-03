@@ -181,12 +181,25 @@ maskingvalue(mfds::MFDataset) = maskingvalue(mfds.ds[1])
 Base.parent(v::MFVariable) = v.var
 Base.parent(v::MFCFVariable) = v.var
 Base.Array(v::MFVariable) = Array(parent(v))
-Base.getindex(v::MFVariable,indexes::TIndices...) = getindex(parent(v),indexes...)
-Base.setindex!(v::MFVariable,data,indexes::TIndices...) = setindex!(parent(v),data,indexes...)
+
+function DiskArrays.readblock!(v::MFVariable{T, N}, aout,indexes::Vararg{OrdinalRange, N}) where {T, N}
+    aout .= parent(v)[indexes...]
+end
+function DiskArrays.readblock!(v::MFCFVariable{T, N}, aout, indexes::Vararg{OrdinalRange, N}) where {T, N}
+    aout .= v.cfvar[indexes...]
+end
+
+function DiskArrays.writeblock!(v::MFVariable{T,N}, data, indexes::Vararg{OrdinalRange, N}) where {T, N}
+    parent(v)[indexes...]= data
+end
+
+function DiskArrays.writeblock!(v::MFCFVariable{T,N}, data, indexes::Vararg{OrdinalRange, N}) where {T, N}
+    v.cfvar[indexes...] = data
+end
+
 Base.size(v::MFVariable) = size(parent(v))
 Base.size(v::MFCFVariable) = size(parent(v))
-Base.getindex(v::MFCFVariable,ind::TIndices...) = v.cfvar[ind...]
-Base.setindex!(v::MFCFVariable,data,ind::TIndices...) = v.cfvar[ind...] = data
+
 function Base.cat(vs::AbstractVariable...; dims::Integer)
     CatArrays.CatArray(dims,vs...)
 end
@@ -288,10 +301,17 @@ function chunking(v::MFVariable)
     storage,chunksizes = chunking(v1)
 
     if storage == :contiguous
-        return (:chunked, size(v1))
-    else
-        return storage,chunksizes
+        storage = :chunked
+        chunksizes = size(v1)
     end
+
+    if ndims(v) == (length(chunksizes)+1)
+        cat_dim = v.var.dim
+        chunksizes = (chunksizes[1:(cat_dim-1)]...,1,chunksizes[cat_dim:end]...)
+    end
+
+    @assert ndims(v) == length(chunksizes) 
+    return storage, chunksizes 
 end
 
 deflate(v::MFVariable) = deflate(v.ds.ds[1][name(v)])

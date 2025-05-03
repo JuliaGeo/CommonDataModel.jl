@@ -448,22 +448,30 @@ end
 #@inline CFtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DTcast) = CFtransform_missing(data,fv)
 #@inline CFinvtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DT) = CFtransform_replace_missing(data,fv)
 
-function Base.getindex(v::CFVariable, indexes::TIndices...)
+function DiskArrays.readblock!(v::CFVariable{T, N},
+    aout,
+    indexes::Vararg{OrdinalRange, N}) where {T, N}
+
     data = parent(v)[indexes...]
-    return CFtransformdata(data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
-                           time_origin(v),time_factor(v),maskingvalue(v),eltype(v))
+
+    aout .= CFtransformdata(data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
+        time_origin(v),time_factor(v),maskingvalue(v),eltype(v))
+
+
+    return nothing
 end
 
-function Base.setindex!(v::CFVariable,data::Array{Missing,N},indexes::TIndices...) where N
+
+function DiskArrays.writeblock!(v::CFVariable{T, N}, data::Array{Missing,N}, indexes::Vararg{OrdinalRange, N}) where {T, N}
     parent(v)[indexes...] = fill(fillvalue(v),size(data))
 end
 
-function Base.setindex!(v::CFVariable,data::Missing,indexes::TIndices...)
+function DiskArrays.writeblock!(v::CFVariable{T, N}, data::Missing, indexes::Vararg{OrdinalRange, N}) where {T, N}
     parent(v)[indexes...] = fillvalue(v)
 end
 
-function Base.setindex!(v::CFVariable,data::Union{T,Array{T}},indexes::TIndices...) where T <: Union{AbstractCFDateTime,DateTime,Missing}
 
+function DiskArrays.writeblock!(v::CFVariable{T, N}, data::Union{DT,Array{DT}}, indexes::Vararg{OrdinalRange, N}) where {T, N, DT <: Union{AbstractCFDateTime,DateTime,Missing}}
     if calendar(v) !== nothing
         # can throw an convertion error if calendar attribute already exists and
         # is incompatible with the provided data
@@ -478,16 +486,13 @@ function Base.setindex!(v::CFVariable,data::Union{T,Array{T}},indexes::TIndices.
     @error "Time units and calendar must be defined during defVar and cannot change"
 end
 
-
-function Base.setindex!(v::CFVariable,data,indexes::TIndices...)
+function DiskArrays.writeblock!(v::CFVariable{T,N}, data, indexes::Vararg{OrdinalRange, N}) where {T, N}
     parent(v)[indexes...] = CFinvtransformdata(
         data,fill_and_missing_values(v),
         scale_factor(v),add_offset(v),
         time_origin(v),time_factor(v),
         maskingvalue(v),
         eltype(parent(v)))
-
-    return data
 end
 
 

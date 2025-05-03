@@ -1,11 +1,39 @@
 
-Base.parent(v::SubVariable) = v.parent
-Base.parentindices(v::SubVariable) = v.indices
-Base.size(v::SubVariable) = _shape_after_slice(size(parent(v)),v.indices...)
+function Base.show(io::IO, v::SubVariable)
+    level = get(io, :level, 0)
+    indent = " " ^ get(io, :level, 0)
+    delim = " × "
+    try
+        indices = parentindices(v)
+        print(io,indent,"View:  ",join(indices,delim),"\n")
+        show(IOContext(io,:level=>level+1),parent(v))
+    catch err
+        @warn "error in show" err
+        print(io,"SubVariable (dataset closed)")
+    end
+end
+
+Base.show(io::IO,::MIME"text/plain",v::SubVariable) = show(io,v)
+
+DiskArrays.subarray(v::SubVariable) = v.v
+
+function Base.getproperty(sub_var::SubVariable, name::Symbol)
+    if !hasfield(typeof(sub_var),name)
+        parent_var = parent(sub_var)
+        if name == :var
+            # if var also return a view
+            return view(parent_var.var, sub_indices(sub_var)...)
+        else
+            return Base.getproperty(parent_var, name)
+        end
+    else
+        return getfield(sub_var,name) # get field from sub_var
+    end 
+end
 
 function dimnames(v::SubVariable)
     dimension_names = dimnames(parent(v))
-    return dimension_names[map(i -> !(i isa Integer),collect(v.indices))]
+    return dimension_names[map(i -> !(i isa Integer),collect(parentindices(v)))]
 end
 
 name(v::SubVariable) = name(parent(v))
@@ -13,61 +41,28 @@ name(v::SubVariable) = name(parent(v))
 attribnames(v::SubVariable) = attribnames(parent(v))
 attrib(v::SubVariable,name::SymbolOrString) = attrib(parent(v),name)
 defAttrib(v::SubVariable,name::SymbolOrString,data) = defAttrib(parent(v),name,data)
+materialize(v::SubVariable) = parent(v)[sub_indices(v)]
+sub_indices(v::SubVariable) = DiskArrays.subarray(v).indices
 
-function SubVariable(A::AbstractVariable,indices...)
-    var = nothing
-    if hasproperty(A,:var)
-        if hasmethod(SubVariable,Tuple{typeof(A.var),typeof.(indices)...})
-            var = SubVariable(A.var,indices...)
-        end
-    end
+function map_indices(parent_var::AbstractVariable, selected_var::AbstractVariable,
+         indices_subvariable)
+    
+    dims_selected = dimnames(selected_var)
+    dims_var= dimnames(parent_var)
+    dim_mapping = [findfirst( x-> x==d, dims_var) for d in dims_selected]
 
-    T = eltype(A)
-    N = length(size_getindex(A,indices...))
-    return SubVariable{T,N,typeof(A),typeof(indices),typeof(A.attrib),typeof(var)}(
-        A,indices,A.attrib,var)
+    indices_selected = indices_subvariable[dim_mapping]
+    return indices_selected
 end
 
-SubVariable(A::AbstractVariable{T,N}) where T where N = SubVariable(A,ntuple(i -> :,N)...)
 
-# recursive calls so that the compiler can infer the types via inline-ing
-# and constant propagation
-_subsub(indices,i,l) = indices
-_subsub(indices,i,l,ip,rest...) = _subsub((indices...,ip[i[l]]),i,l+1,rest...)
-_subsub(indices,i,l,ip::Number,rest...) = _subsub((indices...,ip),i,l,rest...)
-_subsub(indices,i,l,ip::Colon,rest...) = _subsub((indices...,i[l]),i,l+1,rest...)
+## getting the related var also returns a SubVariable
+function Base.getindex(sub_var::SubVariable,n::Union{CFStdName,SymbolOrString})
+    parent_var = parent(sub_var)
+    selected_var = parent_var[n]
 
-#=
-    j = subsub(parentindices,indices)
-
-Computed the tuple of indices `j` so that
-`A[parentindices...][indices...] = A[j...]` for any array `A` and any tuple of
-valid indices `parentindices` and `indices`
-=#
-subsub(parentindices,indices) = _subsub((),indices,1,parentindices...)
-
-materialize(v::SubVariable) = parent(v)[v.indices...]
-
-"""
-collect always returns an array.
-Even if the result of the indexing is a scalar, it is wrapped
-into a zero-dimensional array.
-"""
-function collect(v::SubVariable{T,N}) where T where N
-    if N == 0
-        A = Array{T,0}(undef,())
-        A[] = parent(v)[v.indices...]
-        return A
-    else
-        return parent(v)[v.indices...]
-    end
-end
-
-Base.Array(v::SubVariable) = collect(v)
-
-function Base.view(v::SubVariable,indices::Union{<:Integer,Colon,AbstractVector{<:Integer}}...)
-    sub_indices = subsub(v.indices,indices)
-    SubVariable(parent(v),sub_indices...)
+    indices_selected = map_indices(parent_var, selected_var, sub_indices(sub_var))
+    return view(selected_var, indices_selected...)
 end
 
 """
@@ -96,27 +91,12 @@ close(ds)
 ```
 
 """
-Base.view(v::AbstractVariable,indices::Union{<:Integer,Colon,AbstractVector{<:Integer}}...) = SubVariable(v,indices...)
-Base.view(v::SubVariable,indices::CartesianIndex) = view(v,indices.I...)
-Base.view(v::SubVariable,indices::CartesianIndices) = view(v,indices.indices...)
-
-Base.getindex(v::SubVariable,indices::Union{Int,Colon,AbstractRange{<:Integer}}...) = materialize(view(v,indices...))
-
-Base.getindex(v::SubVariable,indices::CartesianIndex) = getindex(v,indices.I...)
-Base.getindex(v::SubVariable,indices::CartesianIndices) =
-    getindex(v,indices.indices...)
-
-function Base.setindex!(v::SubVariable,data,indices...)
-    sub_indices = subsub(v.indices,indices)
-    parent(v)[sub_indices...] = data
+function Base.view(a::AbstractVariable,i...) 
+    i2 = DiskArrays._replace_colon.(size(a), i) # TODO improve
+    return SubVariable(SubArray(a, i2))
 end
 
-Base.setindex!(v::SubVariable,data,indices::CartesianIndex) =
-    setindex!(v,data,indices.I...)
-Base.setindex!(v::SubVariable,data,indices::CartesianIndices) =
-    setindex!(v,data,indices.indices...)
-
-
+Base.view(a::AbstractVariable, i::CartesianIndices) = view(a, i.indices...)
 
 dimnames(ds::SubDataset) = dimnames(ds.ds)
 defDim(ds::SubDataset,name::SymbolOrString,len) = defDim(ds.ds,name,len)
@@ -176,7 +156,7 @@ groupname(ds::SubDataset) = groupname(ds.ds)
 
 
 function dataset(v::SubVariable)
-    indices = (;((Symbol(d),i) for (d,i) in zip(dimnames(parent(v)),v.indices))...)
+    indices = (;((Symbol(d),i) for (d,i) in zip(dimnames(parent(v)), sub_indices(v)))...)
     return SubDataset(dataset(parent(v)),indices)
 end
 

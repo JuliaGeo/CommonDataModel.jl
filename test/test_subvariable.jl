@@ -1,29 +1,12 @@
 
 #import NCDatasets
-using CommonDataModel: subsub, SubDataset, SubVariable, chunking, deflate, path, @select, varnames
+using CommonDataModel: SubDataset, SubVariable, chunking, deflate, path, @select, varnames
 using DataStructures
 using Test
 
 
 #TDS = NCDatasets.NCDataset
 TDS = MemoryDataset
-
-@test subsub((1:10,),(2:10,)) == (2:10,)
-@test subsub((2:10,),(2:9,)) == (3:10,)
-@test subsub((2:2:10,),(2:3,)) == (4:2:6,)
-@test subsub((:,),(2:4,)) == (2:4,)
-@test subsub((2:2:10,),(3,)) == (6,)
-@test subsub((2:2:10,:),(2:3,2:4)) == (4:2:6,2:4)
-@test subsub((2:2:10,:),(2:3,2)) == (4:2:6,2)
-@test subsub((1,:),(2:3,)) == (1,2:3)
-@test subsub((1,:),(1,)) == (1,1)
-
-A = rand(10,10)
-ip = (2:2:10,:)
-i = (2:3,2:4)
-j = subsub(ip,i)
-A[ip...][i...] == A[j...]
-
 
 
 fname = tempname()
@@ -73,7 +56,7 @@ ncvar_view = view(ncvar,1:3,1:4)
 ncvar_view.attrib["foo"] = "bar"
 @test ncvar_view.attrib["foo"] == "bar"
 @test ncvar.attrib["foo"] == "bar"
-@test SubVariable(ncvar)[:,:] == data
+@test Array(view(ncvar,:,:)) == data
 @test ncscalar[] == 12
 
 @test collect(view(ds,lon=1:3)["scalar"])[1] == 12

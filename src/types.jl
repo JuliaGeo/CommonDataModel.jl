@@ -51,7 +51,7 @@ For a writable dataset, one should also implement:
 * `Base.setindex!(v,data,indices...)`: set the data in `v` at the provided indices
 
 """
-abstract type AbstractVariable{T,N} <: AbstractArray{T, N}
+abstract type AbstractVariable{T,N} <: AbstractDiskArray{T, N}
 end
 
 
@@ -155,12 +155,8 @@ end
 
 # view of subsets
 
-struct SubVariable{T,N,TA,TI,TAttrib,TV} <: AbstractVariable{T,N}
-    parent::TA
-    indices::TI
-    attrib::TAttrib
-    # unpacked variable
-    var::TV
+struct SubVariable{T,N,P,I,L} <: AbstractSubDiskArray{T,N,P,I,L}
+    v::SubArray{T,N,P,I,L}
 end
 
 struct SubDataset{TD,TI,TA,TG}  <: AbstractDataset
