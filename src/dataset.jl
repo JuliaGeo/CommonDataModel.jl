@@ -385,6 +385,15 @@ end
     end
 end
 
+@inline function Base.propertynames(ds::Union{AbstractDataset,AbstractVariable},private::Bool=false)
+    names = fieldnames(typeof(ds))
+
+    if ds isa AbstractDataset
+        return (names...,:attrib,:dim,:group)
+    else
+        return (names...,:attrib,:dim)
+    end
+end
 
 for (item_color,default) in (
     (:section_color, :red),
