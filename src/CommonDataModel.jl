@@ -7,6 +7,21 @@ using Dates
 using Printf
 using Preferences
 using DataStructures
+import DiskArrays: 
+    AbstractDiskArray, 
+    AbstractSubDiskArray, 
+    subarray,
+    writeblock!,
+    readblock!,
+    ChunkStyle,
+    haschunks,
+    eachchunk,
+    Unchunked,
+    Chunked,
+    GridChunks,
+    _replace_colon
+
+import DiskArrays
 import Base:
     LogicalIndex,
     checkbounds,

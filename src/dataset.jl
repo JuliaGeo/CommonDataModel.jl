@@ -171,7 +171,7 @@ function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
 end
 
 
-function Base.setindex!(ds::AbstractDataset,data::AbstractVariable,varname::SymbolOrString)
+function Base.setindex!(ds::AbstractDataset,data::Union{AbstractVariable, SubVariable},varname::SymbolOrString)
     return defVar(ds, varname, data)
 end
 

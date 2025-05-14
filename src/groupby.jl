@@ -462,6 +462,9 @@ Base.BroadcastStyle(::Type{<:ReducedGroupedVariable}) = ReducedGroupedVariableSt
 Base.BroadcastStyle(::DefaultArrayStyle,::ReducedGroupedVariableStyle) = ReducedGroupedVariableStyle()
 Base.BroadcastStyle(::ReducedGroupedVariableStyle,::DefaultArrayStyle) = ReducedGroupedVariableStyle()
 
+Base.BroadcastStyle(::DiskArrays.ChunkStyle,::ReducedGroupedVariableStyle) = ReducedGroupedVariableStyle()
+Base.BroadcastStyle(::ReducedGroupedVariableStyle,::DiskArrays.ChunkStyle) = ReducedGroupedVariableStyle()
+
 function Base.similar(bc::Broadcasted{ReducedGroupedVariableStyle}, ::Type{ElType})  where ElType
     # Scan the inputs for the ReducedGroupedVariable:
     A = find_gv(ReducedGroupedVariable,bc)

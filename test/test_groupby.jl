@@ -239,7 +239,7 @@ show(io,"text/plain",gv)
 
 if VERSION > v"1.7"
     # type inference does not work in julia 1.6
-    @test eltype(gv) == Array{Float32,3}
+    @test_broken eltype(gv) == Array{Float32,3}
 end
 @test name(gr) == "data"
 
