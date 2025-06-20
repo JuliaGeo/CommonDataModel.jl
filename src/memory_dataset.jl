@@ -79,15 +79,14 @@ function DiskArrays.readblock!(v::MemoryVariable{T, N},
 end
 
 
-function DiskArrays.writeblock!(v::MemoryVariable{T, 0}, data, indexes::Vararg{OrdinalRange, 0}) where {T}
-    parent(v)[] = data[]
-    return data
-end
-
-
 function DiskArrays.writeblock!(v::MemoryVariable{T, N}, data, indexes::Vararg{OrdinalRange, N}) where {T, N}
     sz = size(v)
-    parent(v)[indexes...] = data
+    
+    if N == 0
+        parent(v)[] = data[]
+    else
+        parent(v)[indexes...] = data
+    end
 
     root = _root(v)
     for idim = findall(size(v) .> sz)

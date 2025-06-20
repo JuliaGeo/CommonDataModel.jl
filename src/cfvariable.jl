@@ -441,6 +441,19 @@ end
     return CFinvtransform(data,fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,maskingvalue,DT)
 end
 
+## Define for DiskArrays
+@inline function CFinvtransformdata(data::AbstractDiskArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue,DT) where {T,N}
+    data_materialized = Array(data)
+    return CFinvtransformdata(data_materialized,fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue,DT)
+end
+
+@inline function CFinvtransformdata(
+    data::AbstractDiskArray{T,N},fv::Tuple{},scale_factor::Nothing,
+    add_offset::Nothing,time_origin::Nothing,time_factor::Nothing,maskingvalue,::Type{T}) where {T,N}
+    # no transformation necessary (avoid allocation)
+    return data
+end
+
 
 
 # this function is necessary to avoid "iterating" over a single character in Julia 1.0 (fixed Julia 1.3)
@@ -463,11 +476,19 @@ end
 
 
 function DiskArrays.writeblock!(v::CFVariable{T, N}, data::Array{Missing,N}, indexes::Vararg{OrdinalRange, N}) where {T, N}
-    parent(v)[indexes...] = fill(fillvalue(v),size(data))
+    if N == 0
+        parent(v)[] = fill(fillvalue(v),size(data))
+    else
+        parent(v)[indexes...] = fill(fillvalue(v),size(data))
+    end
 end
 
 function DiskArrays.writeblock!(v::CFVariable{T, N}, data::Missing, indexes::Vararg{OrdinalRange, N}) where {T, N}
-    parent(v)[indexes...] = fillvalue(v)
+    if N == 0
+        parent(v)[] = fillvalue(v)
+    else
+        parent(v)[indexes...] = fillvalue(v)
+    end
 end
 
 
@@ -475,11 +496,17 @@ function DiskArrays.writeblock!(v::CFVariable{T, N}, data::Union{DT,Array{DT}}, 
     if calendar(v) !== nothing
         # can throw an convertion error if calendar attribute already exists and
         # is incompatible with the provided data
-        parent(v)[indexes...] = CFinvtransformdata(
+        data_transformed = CFinvtransformdata(
             data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
             time_origin(v),time_factor(v),
             maskingvalue(v),
             eltype(parent(v)))
+        if N==0 
+            parent(v)[] = data_transformed
+        else
+            parent(v)[indexes...] = data_transformed
+        end
+
         return data
     end
 
@@ -487,13 +514,22 @@ function DiskArrays.writeblock!(v::CFVariable{T, N}, data::Union{DT,Array{DT}}, 
 end
 
 function DiskArrays.writeblock!(v::CFVariable{T,N}, data, indexes::Vararg{OrdinalRange, N}) where {T, N}
-    parent(v)[indexes...] = CFinvtransformdata(
-        data,fill_and_missing_values(v),
-        scale_factor(v),add_offset(v),
-        time_origin(v),time_factor(v),
-        maskingvalue(v),
-        eltype(parent(v)))
+
+    data_transformed = CFinvtransformdata(
+            data,fill_and_missing_values(v),
+            scale_factor(v),add_offset(v),
+            time_origin(v),time_factor(v),
+            maskingvalue(v),
+            eltype(parent(v)))
+
+    if N == 0 
+        parent(v)[] = data_transformed
+    else
+        parent(v)[indexes...] = data_transformed
+    end
+
 end
+
 
 
 # can be implemented overridden for faster implementation

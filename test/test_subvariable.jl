@@ -59,6 +59,10 @@ ncvar_view.attrib["foo"] = "bar"
 @test Array(view(ncvar,:,:)) == data
 @test ncscalar[] == 12
 
+coords_names = CommonDataModel.coordinate_names(ncvar_view)
+@test :lat in coords_names
+@test :lon in coords_names
+
 @test collect(view(ds,lon=1:3)["scalar"])[1] == 12
 
 @test Array(view(ncvar,1:3,1:4)) == Array(view(data,1:3,1:4))
