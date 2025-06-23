@@ -18,9 +18,8 @@ import DiskArrays:
     eachchunk,
     Unchunked,
     Chunked,
-    GridChunks,
-    _replace_colon
-
+    GridChunks
+    
 import DiskArrays
 import Base:
     LogicalIndex,

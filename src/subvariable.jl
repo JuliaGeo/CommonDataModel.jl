@@ -96,6 +96,11 @@ function Base.view(a::AbstractVariable,i...)
     return SubVariable(SubArray(a, i2))
 end
 
+# copied from https://github.com/JuliaIO/DiskArrays.jl/blob/6522ba32759f81945396890ebba5525d33342244/src/subarray.jl#L28
+# this is done to not depend on DiskArray Internals.
+_replace_colon(s, ::Colon) = Base.OneTo(s)
+_replace_colon(s, r) = r
+
 Base.view(a::AbstractVariable, i::CartesianIndices) = view(a, i.indices...)
 
 dimnames(ds::SubDataset) = dimnames(ds.ds)
