@@ -239,6 +239,8 @@ show(io,"text/plain",gv)
 
 if VERSION > v"1.7"
     # type inference does not work in julia 1.6
+    # the test is broken. The cause is likely that DiskArrays._disk_collect is 
+    # type unstable for N>2.
     @test_broken eltype(gv) == Array{Float32,3}
 end
 @test name(gr) == "data"

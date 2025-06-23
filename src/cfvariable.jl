@@ -84,7 +84,7 @@ ds = NCDataset("foo.nc");
 close(ds)
 ```
 """
-function cfvariable(ds,
+function cfvariable(ds, 
                     varname;
                     _v = variable(ds,varname),
                     attrib = _v.attrib,
@@ -465,7 +465,9 @@ function DiskArrays.readblock!(v::CFVariable{T, N},
     aout,
     indexes::Vararg{OrdinalRange, N}) where {T, N}
 
-    data = parent(v)[indexes...]
+    parent_var = parent(v)
+    data = similar(aout, eltype(parent_var))
+    DiskArrays.readblock!(parent_var, data, indexes...)
 
     aout .= CFtransformdata(data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
         time_origin(v),time_factor(v),maskingvalue(v),eltype(v))
@@ -479,7 +481,7 @@ function DiskArrays.writeblock!(v::CFVariable{T, N}, data::Array{Missing,N}, ind
     if N == 0
         parent(v)[] = fill(fillvalue(v),size(data))
     else
-        parent(v)[indexes...] = fill(fillvalue(v),size(data))
+        DiskArrays.writeblock!(parent(v), fill(fillvalue(v),size(data)), indexes...)
     end
 end
 
@@ -504,7 +506,7 @@ function DiskArrays.writeblock!(v::CFVariable{T, N}, data::Union{DT,Array{DT}}, 
         if N==0 
             parent(v)[] = data_transformed
         else
-            parent(v)[indexes...] = data_transformed
+            DiskArrays.writeblock!(parent(v), data_transformed, indexes...)
         end
 
         return data
@@ -525,7 +527,7 @@ function DiskArrays.writeblock!(v::CFVariable{T,N}, data, indexes::Vararg{Ordina
     if N == 0 
         parent(v)[] = data_transformed
     else
-        parent(v)[indexes...] = data_transformed
+        DiskArrays.writeblock!(parent(v), data_transformed, indexes...)
     end
 
 end
