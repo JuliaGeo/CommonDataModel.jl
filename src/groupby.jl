@@ -590,3 +590,16 @@ function dataset(gr::ReducedGroupedVariable)
         gr.reduce_fun,
     )
 end
+
+# ReducedGroupedVariable is a Variable and therefore an AbstractDiskArray.
+# getindex is overloaded for ReducedGroupedVariable and therefore 
+# ReducedGroupedVariable is defined to use getindex.
+# An alternative solution is to remove getindex definitions 
+# and then implement the read logic in readblock!
+function DiskArrays.readblock!(gr::ReducedGroupedVariable{T,N},
+    aout,
+    indexes::Vararg{OrdinalRange, N}) where {T,N}
+
+    aout .= Base.getindex(gr,indexes...)
+    return aout
+end
