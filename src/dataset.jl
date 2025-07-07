@@ -281,15 +281,21 @@ function initboundsmap!(ds)
     empty!(ds._boundsmap)
     for vname in keys(ds)
         v = variable(ds,vname)
-        bounds = get(v.attrib,"bounds",nothing)
-
+        bounds = _get_bounds_varname(attribs(v))
         # see https://github.com/Alexander-Barth/NCDatasets.jl/issues/265
-        if bounds isa String
+        if !isempty(bounds)
             ds._boundsmap[bounds] = vname
         end
     end
 end
 
+function _get_bounds_varname(attribs)
+    # First try to get "bounds" variable
+    get(attribs, "bounds") do
+        # Then try "climatology_bounds", and fall back to an empty string
+        get(attribs, "climatology", "")
+    end
+end
 
 """
     write(dest::AbstractDataset, src::AbstractDataset; include = keys(src), exclude = [])
