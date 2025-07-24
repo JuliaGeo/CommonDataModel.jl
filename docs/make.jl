@@ -1,3 +1,6 @@
+using Pkg
+Pkg.activate(@__DIR__)
+
 using Documenter: Documenter, makedocs, deploydocs
 using CommonDataModel
 using Literate
@@ -6,7 +9,7 @@ Literate.markdown(
     "docs/src/tutorial1.jl","docs/src",
     execute = true,
     documenter = true,
-    # We add the credit to Literate.jl the footer
+    # We add the credit to Literate.jl in the footer
     credit = false,
 )
 
@@ -32,6 +35,6 @@ makedocs(;
     ],
 )
 
-deploydocs(;
+deploydocs(
     repo="github.com/JuliaGeo/CommonDataModel.jl",
 )
