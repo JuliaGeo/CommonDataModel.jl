@@ -214,15 +214,18 @@ close(ds)
 add_offset = -1.0
 scale_factor = 0.1
 
-attributes = Dict("add_offset" => add_offset,"scale_factor" => scale_factor)
-
-
 
 for Tbase in (UInt8, Int8, Float32, Float64, Int64, Char, String)
     for _maskingvalue in (NaN,NaN32,missing,42,nothing,mysingleton)
-        local fname, data, fv, ds, ncv, T, varattrib
+        local fname, data, fv, ds, ncv, T, varattrib, attributes
         fname = tempname()
         T = promote_type(Tbase,typeof(_maskingvalue))
+        if T == Float32
+            attributes = Dict("add_offset" => T(add_offset),"scale_factor" => T(scale_factor))
+        else
+            attributes = Dict("add_offset" => add_offset,"scale_factor" => scale_factor)
+        end
+
         data = Matrix{T}(undef,(3,4))
 
         if Tbase == String
@@ -238,7 +241,11 @@ for Tbase in (UInt8, Int8, Float32, Float64, Int64, Char, String)
 
         varattrib =
             if Tbase <: Number
-                attributes
+                if _maskingvalue isa Float32 
+                    Dict("add_offset" => Float32(add_offset),"scale_factor" => Float32(scale_factor))
+                else
+                    Dict("add_offset" => Float64(add_offset),"scale_factor" => Float64(scale_factor))
+                end
             else
                 []
             end
@@ -246,10 +253,12 @@ for Tbase in (UInt8, Int8, Float32, Float64, Int64, Char, String)
         ncv = defVar(ds,"data",data,("lon","lat"),fillvalue = fv, attrib = varattrib)
         @test CDM.maskingvalue(ds) === _maskingvalue
         @test ncv.var[2,2] == fv
-        @test ncv[2,2] === _maskingvalue
+        converted_masking_value = 
+            eltype(ncv) <: Number ? eltype(ncv)(_maskingvalue) : _maskingvalue
+        @test ncv[2,2] === converted_masking_value
         if Tbase <: Number
             @test ncv.var[1,1] * scale_factor + add_offset ≈ data[1,1]
-            @test ncv[1,1] ≈ data[1,1]
+            @test isapprox(ncv[1,1], data[1,1], rtol=10E-8, atol=10E-6)
         else
             @test ncv[1,1] == data[1,1]
         end

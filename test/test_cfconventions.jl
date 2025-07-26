@@ -122,11 +122,14 @@ height = ds[CF"height"]
 @test height[CF"longitude"][:] == 1:10
 @test height[CF"latitude"][:] == 1:11
 
+height_sub = @view ds[CF"height"][2:3,2:3]
+@test height_sub[:,:] == data[2:3,2:3]
+@test height_sub[CF"longitude"][:] == 2:3
+@test height_sub[CF"latitude"][:] == 2:3
 
-height = @view ds[CF"height"][2:3,2:3]
-@test height[:,:] == data[2:3,2:3]
-@test height[CF"longitude"][:] == 2:3
-@test height[CF"latitude"][:] == 2:3
+@test size(height_sub) == (2,2)
+@test size(height_sub[CF"longitude"]) == (2,)
+@test size(height_sub[CF"latitude"]) == (2,)
 
 @test_throws KeyError ds[CF"temperature"]
 

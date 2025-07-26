@@ -373,7 +373,7 @@ function coordinate_value(v::AbstractVariable,name_coord::Symbol)
 end
 
 
-function coordinate_names(v::AbstractVariable)
+function coordinate_names(v::Union{AbstractVariable,SubVariable})
     ds = dataset(v)
     dimension_names = dimnames(v)
 
