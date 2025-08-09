@@ -318,7 +318,9 @@ function chunking(v::MFVariable)
         chunksizes = (chunksizes[1:(cat_dim-1)]...,1,chunksizes[cat_dim:end]...)
     end
 
-    @assert ndims(v) == length(chunksizes) 
+    if ndims(v) != length(chunksizes)
+        return DimensionMismatch("Chunking length not matching MFVariable dimension")
+    end
     return storage, chunksizes 
 end
 

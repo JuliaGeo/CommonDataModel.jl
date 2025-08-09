@@ -478,19 +478,11 @@ end
 
 
 function DiskArrays.writeblock!(v::CFVariable{T, N}, data::Array{Missing,N}, indexes::Vararg{OrdinalRange, N}) where {T, N}
-    if N == 0
-        parent(v)[] = fill(fillvalue(v),size(data))
-    else
-        DiskArrays.writeblock!(parent(v), fill(fillvalue(v),size(data)), indexes...)
-    end
+    parent(v)[indexes...] .= fillvalue(v)
 end
 
 function DiskArrays.writeblock!(v::CFVariable{T, N}, data::Missing, indexes::Vararg{OrdinalRange, N}) where {T, N}
-    if N == 0
-        parent(v)[] = fillvalue(v)
-    else
-        parent(v)[indexes...] = fillvalue(v)
-    end
+    parent(v)[indexes...] .= fillvalue(v)
 end
 
 
@@ -503,11 +495,8 @@ function DiskArrays.writeblock!(v::CFVariable{T, N}, data::Union{DT,Array{DT}}, 
             time_origin(v),time_factor(v),
             maskingvalue(v),
             eltype(parent(v)))
-        if N==0 
-            parent(v)[] = data_transformed
-        else
-            DiskArrays.writeblock!(parent(v), data_transformed, indexes...)
-        end
+    
+        DiskArrays.writeblock!(parent(v), data_transformed, indexes...)
 
         return data
     end
@@ -524,12 +513,7 @@ function DiskArrays.writeblock!(v::CFVariable{T,N}, data, indexes::Vararg{Ordina
             maskingvalue(v),
             eltype(parent(v)))
 
-    if N == 0 
-        parent(v)[] = data_transformed
-    else
-        DiskArrays.writeblock!(parent(v), data_transformed, indexes...)
-    end
-
+    DiskArrays.writeblock!(parent(v), data_transformed, indexes...)
 end
 
 
