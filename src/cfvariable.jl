@@ -103,6 +103,7 @@ function cfvariable(ds,
                     units = _getattrib(ds,_v,_parentname,"units",nothing),
                     calendar = _getattrib(ds,_v,_parentname,"calendar",nothing),
                     maskingvalue = maskingvalue(ds),
+                    prefer_datetime=true,
                     )
 
     v = _v
@@ -177,7 +178,7 @@ function cfvariable(ds,
     )
 
     rettype = _get_rettype(ds, calendar, fillvalue, missing_value,
-                           scaledtype,_maskingvalue)
+                           scaledtype,_maskingvalue; prefer_datetime)
 
     return CFVariable{rettype,ndims(v),typeof(v),typeof(attrib),typeof(storage_attrib)}(
         v,attrib,storage_attrib)
@@ -185,14 +186,14 @@ function cfvariable(ds,
 end
 
 
-function _get_rettype(ds, calendar, fillvalue, missing_value, rettype, maskingvalue)
+function _get_rettype(ds, calendar, fillvalue, missing_value, rettype, maskingvalue; prefer_datetime)
     # rettype can be a date if calendar is different from nothing
     if calendar !== nothing
         DT = nothing
         try
             DT = CFTime.timetype(calendar)
             # this is the only supported option for NCDatasets
-            prefer_datetime = true
+            #prefer_datetime = true
 
             if prefer_datetime &&
                 (DT in (DateTimeStandard,DateTimeProlepticGregorian,DateTimeJulian))
@@ -450,6 +451,7 @@ end
 
 function Base.getindex(v::CFVariable, indexes::TIndices...)
     data = parent(v)[indexes...]
+    @show eltype(data)
     return CFtransformdata(data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
                            time_origin(v),time_factor(v),maskingvalue(v),eltype(v))
 end
