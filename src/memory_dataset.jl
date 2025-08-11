@@ -81,13 +81,20 @@ end
 
 function DiskArrays.writeblock!(v::MemoryVariable{T, N}, data, indexes::Vararg{OrdinalRange, N}) where {T, N}
     sz = size(v)
-    
-    if N == 0
-        parent(v)[] = data[]
-    else
-        parent(v)[indexes...] = data
-    end
+    parent(v)[indexes...] = data
 
+    root = _root(v)
+    for idim = findall(size(v) .> sz)
+        dname = v.dimnames[idim]
+        grow_unlimited_dimension(v.parent_dataset,dname,size(v,idim))
+    end
+    return data
+end
+
+function DiskArrays.writeblock!(v::MemoryVariable{T, 0}, data) where {T}
+    sz = size(v)
+    parent(v)[] = data[]
+    
     root = _root(v)
     for idim = findall(size(v) .> sz)
         dname = v.dimnames[idim]

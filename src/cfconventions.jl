@@ -17,7 +17,7 @@ variable `ncv` with the
 standard name modifier `modifier`. It can be used for example to access
 related variable like status flags.
 """
-function ancillaryvariables(ncv::CFVariable,modifier)
+function ancillaryvariables(ncv::Union{CFVariable, SubVariable{<:Any,<:Any,<:CFVariable}},modifier)
     ds = dataset(ncv)
     varname = name(ncv)
 

@@ -1,7 +1,8 @@
 
 #import NCDatasets
 using CommonDataModel: SubDataset, SubVariable, chunking, deflate, path, @select, varnames
-using DataStructures
+using CommonDataModel: MemoryDataset, defVar, groupby, select
+using DataStructures, Dates
 using Test
 
 
@@ -206,3 +207,48 @@ ss = ncsst3["time"]
 @test ss[1] == DateTime(2000,1,1)
 @test ndims(view(ncsst,:,1,1)) == 1
 close(ds)
+
+
+## test groupby
+fname = tempname()
+ds = TDS(fname,"c")
+
+nclon = defVar(ds,"lon", 1:7, ("lon",))
+nclat = defVar(ds,"lat", 1:10, ("lat",))
+times_array = collect(DateTime(2002,1,1):Day(1):DateTime(2002,3,20))
+
+nctime = defVar(ds,"time", times_array, ("time",))
+ncsst = defVar(ds,"sst", ones(7,10,length(times_array)), ("lon", "lat", "time"))
+
+sst_view = view(ds["sst"],1:5,:1:4,:)
+gv = groupby(sst_view,:time => Dates.Month)
+sum_per_month = sum(gv)
+
+@test size(sum_per_month) == (5,4,3)
+@test all(sum_per_month[:,:,1] .≈ 31.0)
+@test all(sum_per_month[:,:,2] .≈ 28.0)
+@test all(sum_per_month[:,:,3] .≈ 20.0)
+
+sst_view_time = view(ds["sst"],:,:,11:(length(times_array)-5))
+gv = groupby(sst_view_time,:time => Dates.Month)
+sum_per_month = sum(gv)
+@test all(sum_per_month[:,:,1] .≈ 21.0)
+@test all(sum_per_month[:,:,2] .≈ 28.0)
+@test all(sum_per_month[:,:,3] .≈ 15.0)
+
+
+## test select
+sst2_data = ones(7,10,length(times_array)) # setup test var
+sst2_data[:,:,1] .*= collect(1:7)
+sst2_data[:,:,2] .*= collect(1:10)'
+ncsst2 = defVar(ds,"sst2", sst2_data, ("lon", "lat", "time"))
+
+sst_view = view(ds["sst2"],2:7,1:2:10,1:8)
+
+v = select(sst_view,
+           :lon => lon -> 1 <= lon <= 5,
+           :lat => lat -> 2 <= lat <= 7)
+
+@test size(v) == (4,3,8)
+@test all(v[:,1,1] .≈ 2:5)
+@test all(v[1,:,2] .≈ [3,5,7])

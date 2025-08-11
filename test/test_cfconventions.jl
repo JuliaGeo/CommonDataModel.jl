@@ -58,6 +58,12 @@ ds = TDS(fname,"r")
 
 @test_throws ErrorException filter(ds["DEPTH"],:,accepted_status_flags = ["good_data","probably_good_data"])
 
+# test also for views
+lat_view = view(ds["LAT"],2:3)
+@test name(ancillaryvariables(lat_view, "status_flag")) == "QC_LAT"
+@test isequal(filter(lat_view,:,accepted_status_flags = ["good_data","probably_good_data"]),
+    [2.,missing])
+
 close(ds)
 
 # query by CF Standard Name

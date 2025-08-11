@@ -190,19 +190,19 @@ function DiskArrays.readblock!(v::MFCFVariable{T, N}, aout, indexes::Vararg{Ordi
 end
 
 function DiskArrays.writeblock!(v::MFVariable{T,N}, data, indexes::Vararg{OrdinalRange, N}) where {T, N}
-    if N == 0
-        parent(v)[] = data[]
-    else
-        parent(v)[indexes...] = data
-    end
+    parent(v)[indexes...] = data
 end
 
+function DiskArrays.writeblock!(v::MFVariable{T,0}, data) where {T}
+    parent(v)[] = data[]
+end 
+
 function DiskArrays.writeblock!(v::MFCFVariable{T,N}, data, indexes::Vararg{OrdinalRange, N}) where {T, N}
-    if N == 0
-        v.cfvar[] = data[]
-    else
-        v.cfvar[indexes...] = data
-    end
+    v.cfvar[indexes...] = data
+end
+
+function DiskArrays.writeblock!(v::MFCFVariable{T,0}, data) where {T}
+    v.cfvar[] = data[]
 end
 
 Base.size(v::MFVariable) = size(parent(v))
