@@ -359,7 +359,7 @@ function select(v,conditions...)
     end
 end
 
-function coordinate_value(v::AbstractVariable,name_coord::Symbol)
+function coordinate_value(v::Union{AbstractVariable,SubVariable},name_coord::Symbol)
     ncv = dataset(v)[name_coord]
     @assert ndims(ncv) == 1
     dimension_name = dimnames(ncv)[1]

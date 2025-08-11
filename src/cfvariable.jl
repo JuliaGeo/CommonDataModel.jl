@@ -553,7 +553,7 @@ function _getattrib(ds,v,parentname,attribname,default)
     end
 end
 
-function _isrelated(v1::AbstractVariable,v2::AbstractVariable)
+function _isrelated(v1::Union{AbstractVariable,SubVariable},v2::Union{AbstractVariable,SubVariable})
     dimnames(v1) ⊆ dimnames(v2)
 end
 

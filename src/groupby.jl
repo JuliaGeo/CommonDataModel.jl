@@ -279,7 +279,7 @@ function Base.broadcasted(::GroupedVariableStyle,f::Function,A::GroupedVariable{
         A.v,A.coordname,A.group_fun,A.groupmap,A.dim,map_fun)
 end
 
-function GroupedVariable(v::TV,coordname,group_fun::TF,groupmap,dim,map_fun::TM) where TV <: AbstractVariable where {TF,TM}
+function GroupedVariable(v::TV,coordname,group_fun::TF,groupmap,dim,map_fun::TM) where TV <: Union{AbstractVariable,SubVariable} where {TF,TM}
     TGM = typeof(groupmap)
 
     #TG = Base.return_types(selectdim,(TV,Int,Int,))[1]
@@ -361,7 +361,7 @@ close(ds)
 ```
 
 """
-function groupby(v::AbstractVariable,(coordname,group_fun)::Pair{<:SymbolOrString,TF}) where TF
+function groupby(v::Union{AbstractVariable,SubVariable},(coordname,group_fun)::Pair{<:SymbolOrString,TF}) where TF
     # for NCDatasets 0.12
     c = v[String(coordname)][:]
     class = group_fun.(c)

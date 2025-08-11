@@ -44,7 +44,7 @@ allowmissing(x::AbstractArray{T}) where {T} = convert(AbstractArray{Union{T, Mis
 
 
 
-function _filter(ncv::AbstractVariable, indices...; accepted_status_flags = nothing)
+function _filter(ncv::Union{AbstractVariable,SubVariable}, indices...; accepted_status_flags = nothing)
     data = allowmissing(ncv[indices...])
 
     if (accepted_status_flags != nothing)
@@ -99,13 +99,13 @@ good_data = NCDatasets.filter(ds["data"],:,:, accepted_status_flags = ["good_dat
 ```
 
 """
-filter(ncv::AbstractVariable, indices::TIndices...; kwargs...) =
+filter(ncv::Union{AbstractVariable,SubVariable}, indices::TIndices...; kwargs...) =
     _filter(ncv, indices...; kwargs...)
 
-filter(ncv::AbstractVariable, indices::Union{Vector{<:Integer}, Array{<:CartesianIndex}}...; kwargs...) =
+filter(ncv::Union{AbstractVariable,SubVariable}, indices::Union{Vector{<:Integer}, Array{<:CartesianIndex}}...; kwargs...) =
     _filter(ncv, indices...; kwargs...)
 
-filter(ncv::AbstractVariable, indices::BitVector; kwargs...) =
+filter(ncv::Union{AbstractVariable,SubVariable}, indices::BitVector; kwargs...) =
     _filter(ncv, indices...; kwargs...)
 
 """
@@ -127,7 +127,7 @@ v = ncv[:]
 close(ds)
 ```
 """
-function coord(v::AbstractVariable,standard_name)
+function coord(v::Union{AbstractVariable,SubVariable},standard_name)
     matches = Dict(
         "time" => [r".*since.*"],
         # It is great to have choice!

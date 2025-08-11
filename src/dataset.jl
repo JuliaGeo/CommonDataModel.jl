@@ -202,7 +202,7 @@ julia> data = varbyattrib(ds, standard_name = "longitude")[1][:]
 ```
 
 """
-function varbyattrib(ds::Union{AbstractDataset,AbstractVariable}; kwargs...)
+function varbyattrib(ds::Union{AbstractDataset,AbstractVariable, SubVariable}; kwargs...)
     # Start with an empty list of variables
     varlist = []
 
