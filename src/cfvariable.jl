@@ -193,7 +193,6 @@ function _get_rettype(ds, calendar, fillvalue, missing_value, rettype, maskingva
         try
             DT = CFTime.timetype(calendar)
             # this is the only supported option for NCDatasets
-            #prefer_datetime = true
 
             if prefer_datetime &&
                 (DT in (DateTimeStandard,DateTimeProlepticGregorian,DateTimeJulian))
@@ -451,7 +450,6 @@ end
 
 function Base.getindex(v::CFVariable, indexes::TIndices...)
     data = parent(v)[indexes...]
-    @show eltype(data)
     return CFtransformdata(data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
                            time_origin(v),time_factor(v),maskingvalue(v),eltype(v))
 end
