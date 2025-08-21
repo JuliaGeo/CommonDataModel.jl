@@ -58,6 +58,12 @@ ds = TDS(fname,"r")
 
 @test_throws ErrorException filter(ds["DEPTH"],:,accepted_status_flags = ["good_data","probably_good_data"])
 
+# test also for views
+lat_view = view(ds["LAT"],2:3)
+@test name(ancillaryvariables(lat_view, "status_flag")) == "QC_LAT"
+@test isequal(filter(lat_view,:,accepted_status_flags = ["good_data","probably_good_data"]),
+    [2.,missing])
+
 close(ds)
 
 # query by CF Standard Name
@@ -122,11 +128,14 @@ height = ds[CF"height"]
 @test height[CF"longitude"][:] == 1:10
 @test height[CF"latitude"][:] == 1:11
 
+height_sub = @view ds[CF"height"][2:3,2:3]
+@test height_sub[:,:] == data[2:3,2:3]
+@test height_sub[CF"longitude"][:] == 2:3
+@test height_sub[CF"latitude"][:] == 2:3
 
-height = @view ds[CF"height"][2:3,2:3]
-@test height[:,:] == data[2:3,2:3]
-@test height[CF"longitude"][:] == 2:3
-@test height[CF"latitude"][:] == 2:3
+@test size(height_sub) == (2,2)
+@test size(height_sub[CF"longitude"]) == (2,)
+@test size(height_sub[CF"latitude"]) == (2,)
 
 @test_throws KeyError ds[CF"temperature"]
 

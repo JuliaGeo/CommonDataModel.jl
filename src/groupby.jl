@@ -279,7 +279,7 @@ function Base.broadcasted(::GroupedVariableStyle,f::Function,A::GroupedVariable{
         A.v,A.coordname,A.group_fun,A.groupmap,A.dim,map_fun)
 end
 
-function GroupedVariable(v::TV,coordname,group_fun::TF,groupmap,dim,map_fun::TM) where TV <: AbstractVariable where {TF,TM}
+function GroupedVariable(v::TV,coordname,group_fun::TF,groupmap,dim,map_fun::TM) where TV <: Union{AbstractVariable,SubVariable} where {TF,TM}
     TGM = typeof(groupmap)
 
     #TG = Base.return_types(selectdim,(TV,Int,Int,))[1]
@@ -361,7 +361,7 @@ close(ds)
 ```
 
 """
-function groupby(v::AbstractVariable,(coordname,group_fun)::Pair{<:SymbolOrString,TF}) where TF
+function groupby(v::Union{AbstractVariable,SubVariable},(coordname,group_fun)::Pair{<:SymbolOrString,TF}) where TF
     # for NCDatasets 0.12
     c = v[String(coordname)][:]
     class = group_fun.(c)
@@ -461,6 +461,9 @@ struct ReducedGroupedVariableStyle <: BroadcastStyle end
 Base.BroadcastStyle(::Type{<:ReducedGroupedVariable}) = ReducedGroupedVariableStyle()
 Base.BroadcastStyle(::DefaultArrayStyle,::ReducedGroupedVariableStyle) = ReducedGroupedVariableStyle()
 Base.BroadcastStyle(::ReducedGroupedVariableStyle,::DefaultArrayStyle) = ReducedGroupedVariableStyle()
+
+Base.BroadcastStyle(::DiskArrays.ChunkStyle,::ReducedGroupedVariableStyle) = ReducedGroupedVariableStyle()
+Base.BroadcastStyle(::ReducedGroupedVariableStyle,::DiskArrays.ChunkStyle) = ReducedGroupedVariableStyle()
 
 function Base.similar(bc::Broadcasted{ReducedGroupedVariableStyle}, ::Type{ElType})  where ElType
     # Scan the inputs for the ReducedGroupedVariable:
@@ -586,4 +589,17 @@ function dataset(gr::ReducedGroupedVariable)
         gv.map_fun,
         gr.reduce_fun,
     )
+end
+
+# ReducedGroupedVariable is a Variable and therefore an AbstractDiskArray.
+# getindex is overloaded for ReducedGroupedVariable and therefore 
+# ReducedGroupedVariable is defined to use getindex.
+# An alternative solution is to remove getindex definitions 
+# and then implement the read logic in readblock!
+function DiskArrays.readblock!(gr::ReducedGroupedVariable{T,N},
+    aout,
+    indexes::Vararg{OrdinalRange, N}) where {T,N}
+
+    aout .= Base.getindex(gr,indexes...)
+    return aout
 end

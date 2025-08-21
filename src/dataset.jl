@@ -171,7 +171,7 @@ function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
 end
 
 
-function Base.setindex!(ds::AbstractDataset,data::AbstractVariable,varname::SymbolOrString)
+function Base.setindex!(ds::AbstractDataset,data::Union{AbstractVariable, SubVariable},varname::SymbolOrString)
     return defVar(ds, varname, data)
 end
 
@@ -202,7 +202,7 @@ julia> data = varbyattrib(ds, standard_name = "longitude")[1][:]
 ```
 
 """
-function varbyattrib(ds::Union{AbstractDataset,AbstractVariable}; kwargs...)
+function varbyattrib(ds::Union{AbstractDataset,AbstractVariable, SubVariable}; kwargs...)
     # Start with an empty list of variables
     varlist = []
 

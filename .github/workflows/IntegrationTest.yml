@@ -23,6 +23,7 @@ jobs:
           - {user: JuliaGeo,        repo: GRIBDatasets.jl}
           - {user: Alexander-Barth, repo: TIFFDatasets.jl}
           - {user: JuliaGeo,        repo: ZarrDatasets.jl}
+          - {user: eumetsat,        repo: MetopDatasets.jl}
 
     steps:
       - uses: actions/checkout@v5

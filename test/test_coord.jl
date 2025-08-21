@@ -6,7 +6,7 @@ fname = tempname()
 TDS = MemoryDataset
 
 for define_standard_name in [false,true]
-
+    
     TDS(fname,"c") do ds
         # Dimensions
 
@@ -72,5 +72,7 @@ for define_standard_name in [false,true]
     @test name(coord(ds["zeta"],"longitude")) == "lon_rho"
     @test name(coord(ds["ubar"],"longitude")) == "lon_u"
     @test coord(ds["ubar"],"foobar") == nothing
+    var_view = view(ds["zeta"],1:2,:,:)
+    @test name(coord(var_view,"longitude")) == "lon_rho"
     close(ds)
 end
