@@ -469,8 +469,8 @@ function DiskArrays.readblock!(v::CFVariable{T, N},
     data = similar(aout, eltype(parent_var))
     DiskArrays.readblock!(parent_var, data, indexes...)
 
-    aout .= CFtransformdata(data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
-        time_origin(v),time_factor(v),maskingvalue(v),eltype(v))
+    CFtransformdata!(aout, data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
+        time_origin(v),time_factor(v),maskingvalue(v))
 
 
     return nothing
