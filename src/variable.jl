@@ -203,7 +203,7 @@ Defines and return the variable in the data set `ds`
 copied from the variable `src`. The dimension name, attributes
 and data are copied from `src` as well as the variable name (unless provide by `name`).
 """
-function defVar(dest::AbstractDataset,varname::SymbolOrString,srcvar::AbstractVariable; kwargs...)
+function defVar(dest::AbstractDataset,varname::SymbolOrString,srcvar::Union{AbstractVariable, SubVariable}; kwargs...)
     _ignore_checksum = false
     if haskey(kwargs,:checksum)
         _ignore_checksum = kwargs[:checksum] === nothing
@@ -262,7 +262,7 @@ function defVar(dest::AbstractDataset,varname::SymbolOrString,srcvar::AbstractVa
 end
 
 
-function defVar(dest::AbstractDataset,srcvar::AbstractVariable; kwargs...)
+function defVar(dest::AbstractDataset,srcvar::Union{AbstractVariable,SubVariable}; kwargs...)
     defVar(dest,name(srcvar),srcvar; kwargs...)
 end
 
@@ -310,6 +310,20 @@ function Base.show(io::IO,v::AbstractVariable)
 end
 
 
+function DiskArrays.haschunks(v::AbstractVariable) 
+    storage, chunksizes = chunking(v) 
+    if storage == :contiguous
+        return DiskArrays.Unchunked()
+    else
+        return DiskArrays.Chunked()
+    end
+end
+
+function DiskArrays.eachchunk(v::AbstractVariable) 
+    storage,chunksizes = chunking(v) 
+
+    return DiskArrays.GridChunks(v, replace(chunksizes,0=>1))
+end
 
 chunking(v::AbstractVariable) = (:contiguous,size(v))
 chunking(v::AbstractVariable,storage,chunksizes) = nothing

@@ -111,9 +111,9 @@ variable(dds::DeferDataset,varname::Symbol) = variable(dds,string(varname))
 dataset(dv::DeferVariable{T,N,TDS}) where {T,N,TDS} =
     DeferDataset(TDS,dv.r.filename,dv.r.mode; dv.r.args...)
 
-function Base.getindex(dv::DeferVariable,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
+function DiskArrays.readblock!(dv::DeferVariable{T, N}, aout,indexes::Vararg{OrdinalRange, N}) where {T, N}
     Variable(dv) do v
-        return v[indexes...]
+        aout .= v[indexes...]
     end
 end
 

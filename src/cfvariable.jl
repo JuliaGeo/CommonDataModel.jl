@@ -84,7 +84,7 @@ ds = NCDataset("foo.nc");
 close(ds)
 ```
 """
-function cfvariable(ds,
+function cfvariable(ds, 
                     varname;
                     _v = variable(ds,varname),
                     attrib = _v.attrib,
@@ -441,6 +441,19 @@ end
     return CFinvtransform(data,fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,maskingvalue,DT)
 end
 
+## Define for DiskArrays
+@inline function CFinvtransformdata(data::AbstractDiskArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue,DT) where {T,N}
+    data_materialized = Array(data)
+    return CFinvtransformdata(data_materialized,fv,scale_factor,add_offset,time_origin,time_factor,maskingvalue,DT)
+end
+
+@inline function CFinvtransformdata(
+    data::AbstractDiskArray{T,N},fv::Tuple{},scale_factor::Nothing,
+    add_offset::Nothing,time_origin::Nothing,time_factor::Nothing,maskingvalue,::Type{T}) where {T,N}
+    # no transformation necessary (avoid allocation)
+    return data
+end
+
 
 
 # this function is necessary to avoid "iterating" over a single character in Julia 1.0 (fixed Julia 1.3)
@@ -448,47 +461,61 @@ end
 #@inline CFtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DTcast) = CFtransform_missing(data,fv)
 #@inline CFinvtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DT) = CFtransform_replace_missing(data,fv)
 
-function Base.getindex(v::CFVariable, indexes::TIndices...)
-    data = parent(v)[indexes...]
-    return CFtransformdata(data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
-                           time_origin(v),time_factor(v),maskingvalue(v),eltype(v))
+function DiskArrays.readblock!(v::CFVariable{T, N},
+    aout,
+    indexes::Vararg{OrdinalRange, N}) where {T, N}
+
+    parent_var = parent(v)
+    data = similar(aout, eltype(parent_var))
+    DiskArrays.readblock!(parent_var, data, indexes...)
+
+    CFtransformdata!(aout, data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
+        time_origin(v),time_factor(v),maskingvalue(v))
+
+
+    return nothing
 end
 
-function Base.setindex!(v::CFVariable,data::Array{Missing,N},indexes::TIndices...) where N
-    parent(v)[indexes...] = fill(fillvalue(v),size(data))
+
+function DiskArrays.writeblock!(v::CFVariable{T, N}, data::Array{Missing,N}, indexes::Vararg{OrdinalRange, N}) where {T, N}
+    parent(v)[indexes...] .= fillvalue(v)
 end
 
-function Base.setindex!(v::CFVariable,data::Missing,indexes::TIndices...)
-    parent(v)[indexes...] = fillvalue(v)
+function DiskArrays.writeblock!(v::CFVariable{T, N}, data::Missing, indexes::Vararg{OrdinalRange, N}) where {T, N}
+    parent(v)[indexes...] .= fillvalue(v)
 end
 
-function Base.setindex!(v::CFVariable,data::Union{T,Array{T}},indexes::TIndices...) where T <: Union{AbstractCFDateTime,DateTime,Missing}
 
+function DiskArrays.writeblock!(v::CFVariable{T, N}, data::Union{DT,Array{DT}}, indexes::Vararg{OrdinalRange, N}) where {T, N, DT <: Union{AbstractCFDateTime,DateTime,Missing}}
     if calendar(v) !== nothing
         # can throw an convertion error if calendar attribute already exists and
         # is incompatible with the provided data
-        parent(v)[indexes...] = CFinvtransformdata(
+        data_transformed = CFinvtransformdata(
             data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
             time_origin(v),time_factor(v),
             maskingvalue(v),
             eltype(parent(v)))
+    
+        DiskArrays.writeblock!(parent(v), data_transformed, indexes...)
+
         return data
     end
 
     @error "Time units and calendar must be defined during defVar and cannot change"
 end
 
+function DiskArrays.writeblock!(v::CFVariable{T,N}, data, indexes::Vararg{OrdinalRange, N}) where {T, N}
 
-function Base.setindex!(v::CFVariable,data,indexes::TIndices...)
-    parent(v)[indexes...] = CFinvtransformdata(
-        data,fill_and_missing_values(v),
-        scale_factor(v),add_offset(v),
-        time_origin(v),time_factor(v),
-        maskingvalue(v),
-        eltype(parent(v)))
+    data_transformed = CFinvtransformdata(
+            data,fill_and_missing_values(v),
+            scale_factor(v),add_offset(v),
+            time_origin(v),time_factor(v),
+            maskingvalue(v),
+            eltype(parent(v)))
 
-    return data
+    DiskArrays.writeblock!(parent(v), data_transformed, indexes...)
 end
+
 
 
 # can be implemented overridden for faster implementation
@@ -526,7 +553,7 @@ function _getattrib(ds,v,parentname,attribname,default)
     end
 end
 
-function _isrelated(v1::AbstractVariable,v2::AbstractVariable)
+function _isrelated(v1::Union{AbstractVariable,SubVariable},v2::Union{AbstractVariable,SubVariable})
     dimnames(v1) ⊆ dimnames(v2)
 end
 

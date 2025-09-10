@@ -35,7 +35,7 @@ function delAttrib(ds::Union{AbstractDataset,AbstractVariable},name::SymbolOrStr
 end
 
 
-attribs(ds::Union{AbstractDataset,AbstractVariable}) =
+attribs(ds::Union{AbstractDataset,AbstractVariable, SubVariable}) =
     OrderedDict((dn,attrib(ds,dn)) for dn in attribnames(ds))
 
 
