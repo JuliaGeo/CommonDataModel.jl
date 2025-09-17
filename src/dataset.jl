@@ -175,6 +175,11 @@ function Base.setindex!(ds::AbstractDataset,data::Union{AbstractVariable, SubVar
     return defVar(ds, varname, data)
 end
 
+"""
+    keys(ds::AbstractDataset)
+
+Return a list of all variable names in the dataset `ds`.
+"""
 function Base.keys(ds::AbstractDataset)
     return varnames(ds)
 end
