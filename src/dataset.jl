@@ -184,6 +184,11 @@ function Base.keys(ds::AbstractDataset)
     return varnames(ds)
 end
 
+"""
+    haskey(ds::AbstractDataset,varname)
+
+Return true if the dataset `ds` has a variable with the name `name`.
+"""
 function Base.haskey(ds::AbstractDataset,varname)
     return Symbol(varname) in Symbol.(keys(ds))
 end
