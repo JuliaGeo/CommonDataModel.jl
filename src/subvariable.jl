@@ -92,16 +92,11 @@ close(ds)
 
 """
 function Base.view(a::AbstractVariable,i...) 
-    i2 = DiskArrays._replace_colon.(size(a), i) # TODO improve
-    return SubVariable(SubArray(a, i2))
+    disk_sub_array = DiskArrays.view_disk(a, i...)
+    return SubVariable(DiskArrays.subarray(disk_sub_array))
 end
 
-# copied from https://github.com/JuliaIO/DiskArrays.jl/blob/6522ba32759f81945396890ebba5525d33342244/src/subarray.jl#L28
-# this is done to not depend on DiskArray Internals.
-_replace_colon(s, ::Colon) = Base.OneTo(s)
-_replace_colon(s, r) = r
-
-Base.view(a::AbstractVariable, i::CartesianIndices) = view(a, i.indices...)
+Base.vec(a::AbstractVariable) = view(a, :)
 
 dimnames(ds::SubDataset) = dimnames(ds.ds)
 defDim(ds::SubDataset,name::SymbolOrString,len) = defDim(ds.ds,name,len)
