@@ -252,3 +252,14 @@ v = select(sst_view,
 @test size(v) == (4,3,8)
 @test all(v[:,1,1] .≈ 2:5)
 @test all(v[1,:,2] .≈ [3,5,7])
+
+
+## regression test for https://github.com/JuliaGeo/NCDatasets.jl/issues/287
+fname = tempname()
+ds = TDS(fname, "c")
+v = defVar(ds, "temperature", zeros(10,11), ("lon", "lat"))
+m = iseven.(reshape(1:(10*11),(10,11)))
+
+@test size(view(v,m)) == (count(m),)
+v[m] .= 1
+@test Array(v) == m
