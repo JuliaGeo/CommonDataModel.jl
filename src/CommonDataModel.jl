@@ -11,6 +11,7 @@ import DiskArrays:
     AbstractDiskArray, 
     AbstractSubDiskArray, 
     subarray,
+    view_disk,
     writeblock!,
     readblock!,
     ChunkStyle,
@@ -36,6 +37,8 @@ import Base:
     reduce,
     show,
     size,
+    vec,
+    view,
     write
 
 import Statistics
