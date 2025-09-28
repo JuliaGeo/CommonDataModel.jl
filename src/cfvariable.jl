@@ -522,7 +522,7 @@ end
 function boundsParentVar(ds,varname)
     for vn in varnames(ds)
         v = variable(ds,vn)
-        bounds = get(attribs(v),"bounds","")
+        bounds = _get_bounds_varname(attribs(v))
         if bounds === varname
             return vn
         end
