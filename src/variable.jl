@@ -119,7 +119,7 @@ end
 as_dict(x::NamedTuple) = OrderedDict(zip(keys(x),values(x)))
 as_dict(x) = OrderedDict(x)
 
-function _defVar(ds::AbstractDataset,name::SymbolOrString,data,::Type{<:Union{DateTime,AbstractCFDateTime}},vardimnames; kwargs...)
+function _defVar(ds::AbstractDataset,name::SymbolOrString,data,::Type{<:Union{DateTime,Date,AbstractCFDateTime}},vardimnames; kwargs...)
     _defVar(ds,name,data,Float64,vardimnames; kwargs...)
 end
 
