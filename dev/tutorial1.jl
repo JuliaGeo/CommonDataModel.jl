@@ -12,10 +12,15 @@ using IntervalSets
 using NCDatasets
 using Statistics
 
+# store images as separated files
+CairoMakie.enable_only_mime!("png")
+
 # Some helper functions for plotting with Makie for plotting maps and timeseries.
 
 function nicemaps(v; timeindex = 1, lon = v["lon"][:], lat = v["lat"][:], title = nothing)
-    fig, ax, hm = heatmap(lon,lat,v[:,:,timeindex],aspect_ratio = 1/cosd(mean(lat)))
+    fig = Figure()
+    ax = Axis(fig[1, 1],aspect = AxisAspect(1/cosd(mean(lat))))
+    hm = heatmap!(ax,lon,lat,v[:,:,timeindex])
     if !isnothing(title)
         ax.title[] = title
     end
@@ -39,7 +44,7 @@ end
 # The dataset contains the variables `lon` (longitude), `lat` (latitude), `time`
 # and `sst` (sea surface temperature).
 
-url = "https://psl.noaa.gov/thredds/fileServer/Datasets/noaa.oisst.v2.highres/sst.day.mean.2023.nc"
+url = "https://downloads.psl.noaa.gov/Datasets/noaa.oisst.v2.highres/sst.day.mean.2023.nc"
 
 fname = "sst.day.mean.2023.nc"
 if !isfile(fname)
