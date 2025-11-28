@@ -20,7 +20,7 @@ end
 
 makedocs(;
     modules=[CommonDataModel],
-    repo="https://github.com/JuliaGeo/CommonDataModel.jl/blob/{commit}{path}#{line}",
+    repo=Documenter.Remotes.GitHub("JuliaGeo", "CommonDataModel.jl"),
     sitename="CommonDataModel.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",

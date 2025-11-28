@@ -10,7 +10,7 @@ NCDatasets = "85f8d34a-cbdd-5861-8df4-14fed0d494ab"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
-CairoMakie = "0.10"
+CairoMakie = "0.15"
 Dates = "1"
 Documenter = "1"
 Downloads = "1"
