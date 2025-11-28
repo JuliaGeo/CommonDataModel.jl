@@ -44,7 +44,7 @@ end
 # The dataset contains the variables `lon` (longitude), `lat` (latitude), `time`
 # and `sst` (sea surface temperature).
 
-url = "https://psl.noaa.gov/thredds/fileServer/Datasets/noaa.oisst.v2.highres/sst.day.mean.2023.nc"
+url = "https://downloads.psl.noaa.gov/Datasets/noaa.oisst.v2.highres/sst.day.mean.2023.nc"
 
 fname = "sst.day.mean.2023.nc"
 if !isfile(fname)
