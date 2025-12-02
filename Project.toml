@@ -3,7 +3,7 @@ uuid = "1fbeeb36-5f17-413c-809b-666fb144f157"
 keywords = ["netcdf", "GRIB", "climate and forecast conventions", "oceanography", "meteorology", "climatology", "opendap"]
 license = "MIT"
 desc = "CommonDataModel is a module that defines types common to NetCDF and GRIB data"
-authors = ["Alexander Barth <barth.alexander@gmail.com>"]
+authors = ["Alexander Barth <barth.alexander@gmail.com> and contributors (https://github.com/JuliaGeo/CommonDataModel.jl/graphs/contributors)"]
 version = "0.4.2"
 
 [deps]
