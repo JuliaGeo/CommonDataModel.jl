@@ -19,7 +19,7 @@ jobs:
         julia-version: [1]
         os: [ubuntu-latest]
         package:
-          - {user: Alexander-Barth, repo: NCDatasets.jl}
+          - {user: JuliaGeo,        repo: NCDatasets.jl}
           - {user: JuliaGeo,        repo: GRIBDatasets.jl}
           - {user: Alexander-Barth, repo: TIFFDatasets.jl}
           - {user: JuliaGeo,        repo: ZarrDatasets.jl}
