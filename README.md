@@ -12,7 +12,7 @@ This package contains abstracts type definition for loading and manipulating GRI
 | NetCDF  | [`NCDatasets`](https://github.com/Alexander-Barth/NCDatasets.jl)     |            ✔ |             ✔ |
 | OPeNDAP | [`NCDatasets`](https://github.com/Alexander-Barth/NCDatasets.jl)     |            ✔ |             - |
 | GRIB    | [`GRIBDatasets`](https://github.com/JuliaGeo/GRIBDatasets.jl)        |            ✔ |             - |
-| geoTIFF | [`TIFFDatasets`](https://github.com/Alexander-Barth/TIFFDatasets.jl) |            ✔ |             - |
+| geoTIFF or JPEG 2000 | [`TIFFDatasets`](https://github.com/Alexander-Barth/TIFFDatasets.jl) |            ✔ |             - |
 | Zarr    | [`ZarrDatasets`](https://github.com/JuliaGeo/ZarrDatasets.jl)        |            ✔ |             ✔ |
 |         | [`MetopDatasets`](https://github.com/eumetsat/MetopDatasets.jl)        |            ✔ |             - |
 
