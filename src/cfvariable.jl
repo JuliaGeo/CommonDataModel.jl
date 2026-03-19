@@ -31,6 +31,9 @@ dim(v::CFVariable,name::SymbolOrString) = dim(parent(v),name)
 Base.show(io::IO,::MIME"text/plain",v::AbstractVariable) = show(io,v)
 
 
+_better_than_Float32(::Type{Float32}) = Float64
+_better_than_Float32(::Type{T}) where {T} = T
+
 """
     v = cfvariable(ds::NCDataset,varname::SymbolOrString; <attrib> = <value>)
 
@@ -130,7 +133,7 @@ function cfvariable(ds,
             calendar = lowercase(calendar)
         end
         try
-            DTsource = CFTime.timetype(calendar,units,T)
+            DTsource = CFTime.timetype(calendar,units,_better_than_Float32(T))
         catch err
             calendar = nothing
             @debug "time units parsing failed " err units calendar
@@ -269,12 +272,11 @@ end
 # special case when time variables are stored as single precision,
 # promoted internally to double precision
 @inline asdate(data::Float32,DTsource::Nothing,DTcast) = data
+
 @inline asdate(data::Float32,DTsource,DTcast) =
     convert(DTcast,CFTime.timedecode(DTsource,Float64(data)))
 
-@inline fromdate(data::TimeType,DTsource) =
-    CFTime.timeencode(DTsource,data)
-
+@inline fromdate(data::TimeType,DTsource) = CFTime.timeencode(DTsource,data)
 @inline fromdate(data,DTsource) = data
 
 
