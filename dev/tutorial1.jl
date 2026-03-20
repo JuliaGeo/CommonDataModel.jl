@@ -44,7 +44,10 @@ end
 # The dataset contains the variables `lon` (longitude), `lat` (latitude), `time`
 # and `sst` (sea surface temperature).
 
-url = "https://downloads.psl.noaa.gov/Datasets/noaa.oisst.v2.highres/sst.day.mean.2023.nc"
+# The service is a bit unreliable, the original URL is
+# url = "https://psl.noaa.gov/thredds/fileServer/Datasets/noaa.oisst.v2.highres/sst.day.mean.2023.nc"
+
+url = "http://data-assimilation.net/upload/Alex/SST_2023/sst.day.mean.2023.nc"
 
 fname = "sst.day.mean.2023.nc"
 if !isfile(fname)
