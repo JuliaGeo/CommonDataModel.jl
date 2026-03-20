@@ -1,5 +1,6 @@
 #using NCDatasets
 using Test
+using CommonDataModel: MemoryDataset
 import CommonDataModel as CDM
 using DataStructures
 using Dates
@@ -171,6 +172,16 @@ str = String(take!(io))
 @test_logs (:warn, r".*analysis.*")    CDM.defVar(md,"data2",eltype(data),("lon","lat"), attrib = OrderedDict{String,Any}(    "units" => "days since analysis"));
 
 close(md)
+
+# time as nanoseconds (issue #46)
+
+md = MemoryDataset()
+CDM.defDim(md,"time",3)
+CDM.defVar(md,"data_ns",Int64,("time",), attrib = OrderedDict{String,Any}(
+    "units" => "nanoseconds since 2000-01-01 00:00:00.000000001"))
+mv = CDM.cfvariable(md,"data_ns",prefer_datetime=false)
+mv.var[1] = 2
+@test Dates.nanosecond(mv[1]) == 3
 
 # Alternative to Missing for NetCDF fillvalue
 

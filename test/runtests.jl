@@ -11,7 +11,7 @@ using Test
     include("test_copy.jl")
 end
 
-@testset "DiskArray interface" begin 
+@testset "DiskArray interface" begin
     include("test_disk_array.jl")
 end
 
@@ -34,7 +34,7 @@ end
     include("test_multifile_select.jl")
 end
 
-@testset "groupby" begin 
+@testset "groupby" begin
     include("test_groupby.jl")
     include("test_rolling.jl")
 end

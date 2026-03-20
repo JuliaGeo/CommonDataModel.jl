@@ -266,15 +266,16 @@ end
 @inline asdate(data,DTsource::Nothing,DTcast) = data
 @inline asdate(data::Missing,DTsource::Nothing,DTcast) = data
 
+# unused, but necessary to avoid ambiguity
+@inline asdate(data::Missing,DTsource,::Type{DateTime}) = data
+@inline asdate(data,DTsource::Nothing,::Type{DateTime}) = data
+@inline asdate(data::Missing,DTsource::Nothing,::Type{DateTime}) = data
+
+@inline asdate(data,DTsource,DTcast::Type{DateTime}) =
+    round(DTcast,CFTime.timedecode(DTsource,data))
+
 @inline asdate(data,DTsource,DTcast) =
     convert(DTcast,CFTime.timedecode(DTsource,data))
-
-# special case when time variables are stored as single precision,
-# promoted internally to double precision
-@inline asdate(data::Float32,DTsource::Nothing,DTcast) = data
-
-@inline asdate(data::Float32,DTsource,DTcast) =
-    convert(DTcast,CFTime.timedecode(DTsource,Float64(data)))
 
 @inline fromdate(data::TimeType,DTsource) = CFTime.timeencode(DTsource,data)
 @inline fromdate(data,DTsource) = data
@@ -327,7 +328,7 @@ end
                         data,fv),
                     scale_factor),
                 add_offset),
-            DTsource,DTcast),
+            DTsource,nonmissingtype(DTcast)),
         maskingvalue)
 end
 
