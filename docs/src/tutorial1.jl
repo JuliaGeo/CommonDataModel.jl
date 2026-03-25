@@ -12,8 +12,7 @@ using IntervalSets
 using NCDatasets
 using Statistics
 
-# store images as separated files
-CairoMakie.enable_only_mime!("png")
+CairoMakie.enable_only_mime!("png") #hide
 
 # Some helper functions for plotting with Makie for plotting maps and timeseries.
 
