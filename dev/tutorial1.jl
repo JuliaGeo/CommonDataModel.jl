@@ -14,28 +14,23 @@ using Statistics
 
 CairoMakie.enable_only_mime!("png") #hide
 
-# Some helper functions for plotting with Makie for plotting maps and timeseries.
-
-function nicemaps(v; timeindex = 1, lon = v["lon"][:], lat = v["lat"][:], title = nothing)
+# Some helper functions for plotting maps and timeseries with Makie .
+# Note that the variabless v is an array type of CommonDataModel. All related
+# variables sharing the same dimensions (in particular coordinate variables)
+# can be access by subsetting v with the name of the related variable.
+function nicemaps(v; timeindex = 1, lon = v["lon"][:], lat = v["lat"][:], title="")
     fig = Figure()
-    ax = Axis(fig[1, 1],aspect = AxisAspect(1/cosd(mean(lat))))
+    ax = Axis(fig[1, 1]; aspect = AxisAspect(1/cosd(mean(lat))), title)
     hm = heatmap!(ax,lon,lat,v[:,:,timeindex])
-    if !isnothing(title)
-        ax.title[] = title
-    end
     Colorbar(fig[1,2],hm)
     return fig
 end
 
-function nicetimeseries(v::AbstractVector; time = v["time"][:], title = nothing,
-                  timefmt = "yyyy-mm-dd")
-    fig, ax, ln = lines(Dates.value.(time),v[:])
+function nicetimeseries(v::AbstractVector; time = v["time"][:], title = nothing)
+    fig, ax, ln = lines(time,v[:])
     if !isnothing(title)
         ax.title[] = title
     end
-    timeticks = DateTime.(2023,1:2:12,1)
-    ax.xticks = Dates.value.(timeticks),Dates.format.(timeticks,timefmt)
-    ax.xticklabelrotation = π/4
     return fig
 end
 
@@ -62,6 +57,11 @@ end
 ds = NCDataset(fname)
 ncsst = ds["sst"]
 
+# ncsst2 is a lazy view of the netCDF variable ncsst subjected to the following
+# selection criteria. Lon, lat and time are netCDF variables in the datasets.
+# The operator ≈ looks for the nearest time instance.
+# Use e.g. time ≈ DateTime(2023,4,1) ± Day(1) to set a tolerance
+# The operators ≈ and ± are typed as \approx and \pm followed by the TAB key.
 ncsst2 = @select(ncsst,300 <= lon <= 360 && 0 <= lat <= 46 && time ≈ DateTime(2023,4,1))
 
 nicemaps(ncsst2, title = "NA SST")
@@ -73,13 +73,14 @@ ncsst_first = view(ncsst,:,:,1)
 ncsst_na = @select(ncsst_first,300 <= lon <= 360 && 0 <= lat <= 46)
 nicemaps(ncsst_na)
 
-# Select all data from a given month
+# Select all data from a given month: the julia function `Dates.month` is
+# first applied element-wise to all elements of time before comparing to 3.
 
 ncsst_march = @select(ncsst,Dates.month(time) == 3)
 nicemaps(ncsst_march, timeindex = 1, title = "SST 1st March 2023")
 
 
-# Select multiple months using e.g. an interval (from [IntervalSets](https://github.com/JuliaMath/IntervalSets.jl)).
+# Select multiple months using e.g. an interval (from [IntervalSets](https://github.com/JuliaMath/IntervalSets.jl)). The upper bound of the interval is inclusive.
 # ∈ can be typed by writing `\in` directly followed by the TAB key.
 
 ncsst_march_april = @select(ncsst,Dates.month(time) ∈ 3..4)
@@ -118,7 +119,7 @@ size(ncsst_outside)
 ds_equator = @select(ds,lat ≈ 0 && time ≈ DateTime(2023,1,1))
 lon_equator = @select(ds_equator,coalesce(sst > 30,false))["lon"]
 
-# The first 3 longitude where SST exceeds 30°C at the equator for 2023-01-01
+# The first 3 longitude valeus where SST exceeds 30°C at the equator for 2023-01-01
 
 lon_equator[1:3]
 
@@ -130,6 +131,7 @@ lon_equator[1:3]
 # For example group the SST by month and average per month:
 
 sst_mean = mean(@groupby(ncsst,Dates.Month(time)))
+size(sst_mean)
 
 # Instead of using the macro one can also use the function `groupby`:
 
@@ -168,5 +170,8 @@ is_atlantic_hurricane_season(time) =
     DateTime(year(time),6,1) <= time <= DateTime(year(time),11,30)
 
 sst_my_mean = prob_hot(groupby(ncsst,:time => is_atlantic_hurricane_season));
+size(sst_my_mean)
 
+# The reducing will create two slices depending wether the condition is
+# false (1st slice) or true (2nd slice)
 nicemaps(sst_my_mean,timeindex=2, title = "probability(temp. > 26°C) during Atlantic hurricane season")
