@@ -15,9 +15,9 @@ using Statistics
 CairoMakie.enable_only_mime!("png") #hide
 
 # Some helper functions for plotting maps and timeseries with Makie .
-# Note that the variabless v is an array type of CommonDataModel. All related
+# Note that the variable `v` is an array type of CommonDataModel. All related
 # variables sharing the same dimensions (in particular coordinate variables)
-# can be access by subsetting v with the name of the related variable.
+# can be access by subsetting `v` with the name of the related variable.
 function nicemaps(v; timeindex = 1, lon = v["lon"][:], lat = v["lat"][:], title="")
     fig = Figure()
     ax = Axis(fig[1, 1]; aspect = AxisAspect(1/cosd(mean(lat))), title)
@@ -39,7 +39,7 @@ end
 # and `sst` (sea surface temperature).
 
 # The service is a bit unreliable, the original URL is
-# url = "https://psl.noaa.gov/thredds/fileServer/Datasets/noaa.oisst.v2.highres/sst.day.mean.2023.nc"
+# https://psl.noaa.gov/thredds/fileServer/Datasets/noaa.oisst.v2.highres/sst.day.mean.2023.nc
 
 url = "http://data-assimilation.net/upload/Alex/SST_2023/sst.day.mean.2023.nc"
 
@@ -57,11 +57,12 @@ end
 ds = NCDataset(fname)
 ncsst = ds["sst"]
 
-# ncsst2 is a lazy view of the netCDF variable ncsst subjected to the following
-# selection criteria. Lon, lat and time are netCDF variables in the datasets.
-# The operator ≈ looks for the nearest time instance.
-# Use e.g. time ≈ DateTime(2023,4,1) ± Day(1) to set a tolerance
-# The operators ≈ and ± are typed as \approx and \pm followed by the TAB key.
+# `ncsst2` is a lazy view of the netCDF variable ncsst subjected to the following
+# selection criteria. The names `lon`, `lat` and `time` correspond to netCDF variables
+# in the datasets.
+# The operator `≈` looks for the nearest time instance.
+# Use e.g. `time ≈ DateTime(2023,4,1) ± Day(1)` to set a tolerance
+# The operators `≈` and `±` are typed as \approx and \pm followed by the TAB key.
 ncsst2 = @select(ncsst,300 <= lon <= 360 && 0 <= lat <= 46 && time ≈ DateTime(2023,4,1))
 
 nicemaps(ncsst2, title = "NA SST")
@@ -81,21 +82,24 @@ nicemaps(ncsst_march, timeindex = 1, title = "SST 1st March 2023")
 
 
 # Select multiple months using e.g. an interval (from [IntervalSets](https://github.com/JuliaMath/IntervalSets.jl)). The upper bound of the interval is inclusive.
-# ∈ can be typed by writing `\in` directly followed by the TAB key.
+# `∈` can be typed by writing `\in` directly followed by the TAB key.
 
 ncsst_march_april = @select(ncsst,Dates.month(time) ∈ 3..4)
 nicemaps(ncsst_march_april)
 
-# Use julia functions to extract data; here the `abs` function
-# polar regions north of 60°N and south of 60°S
+# It is allowed to use julia functions in the data selection; here the `abs` function
+# is used to select the equalorial region between and 20°S and 20°N
 
-ncsst_polar = @select(ncsst,abs(lat) > 60)
-fig, ax, hm = heatmap(ncsst_polar[:,:,1])
-ax.title[] = "regions north of 60°N and south of 60°S ($(ncsst_polar[:time][1]))"
-Colorbar(fig[1,2],hm)
+ncsst_equatorial = @select(ncsst,abs(lat) < 20)
+lon = ncsst_equatorial["lon"][:]
+lat = ncsst_equatorial["lat"][:]
+fig = Figure(size = (500, 200));
+ax = Axis(fig[1, 1]; aspect = AxisAspect(7));
+hm = heatmap!(ax,lon,lat,ncsst_equatorial[:,:,1]);
+Colorbar(fig[2,1],hm,vertical = false);
+fig
 
-
-# Extract the time series of the closest point to a given point
+# Extract the time series of the closest location to a given point
 
 ncsst_timeseries = @select(ncsst,lon ≈ 330 && lat ≈ 38)
 lon = ncsst_timeseries["lon"][:]
