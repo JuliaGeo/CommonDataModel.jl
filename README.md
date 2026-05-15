@@ -15,7 +15,7 @@ This package contains abstracts type definition for loading and manipulating GRI
 | geoTIFF or JPEG 2000 | [`TIFFDatasets`](https://github.com/Alexander-Barth/TIFFDatasets.jl) |            ✔ |             - |
 | Zarr    | [`ZarrDatasets`](https://github.com/JuliaGeo/ZarrDatasets.jl)        |            ✔ |             ✔ |
 | Metop   | [`MetopDatasets`](https://github.com/eumetsat/MetopDatasets.jl)        |            ✔ |             - |
-
+| CDF | [`CDFDatasets`](https://github.com/JuliaSpacePhysics/CDFDatasets.jl)       |            ✔ |             - |
 
 
 Features include:
