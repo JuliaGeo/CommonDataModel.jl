@@ -143,6 +143,8 @@ end
 
 struct DeferDataset{TDS} <: AbstractDataset
     r::Resource
+    # use 0-d array to have a concrete type instead of a Ref{Bool} or type parameter
+    isopen::Array{Bool, 0}
     groupname::String
     data::OrderedDict
     _boundsmap::Dict{String,String}

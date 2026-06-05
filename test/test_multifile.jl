@@ -19,8 +19,10 @@ import CommonDataModel:
     deflate,
     dimnames,
     fillvalue,
+    name,
     parentdataset,
     sync,
+    isopen,
     variable
 
 function example_file(TDS,i,array, fname = tempname();
@@ -195,7 +197,7 @@ for deferopen in (false,true)
     # in-place load
     ncv = mfds[varname].var
     buffer = zeros(eltype(ncv),size(ncv))
-    load!(ncv,buffer,:,:,:)
+    CDM.load!(ncv,buffer,:,:,:)
     @test buffer == C
 
     # show

@@ -74,6 +74,9 @@ end
 
 iswritable(mfds::MFDataset) = iswritable(mfds.ds[1])
 
+Base.isopen(mfds::MFDataset) = isopen(mfds.ds[1])
+
+
 function MFDataset(ds,aggdim,isnewdim,constvars)
     _boundsmap = Dict{String,String}()
     mfds = MFDataset(ds,aggdim,isnewdim,constvars,_boundsmap)

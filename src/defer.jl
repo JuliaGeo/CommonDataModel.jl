@@ -54,7 +54,8 @@ end
 
 function DeferDataset(TDS,r::Resource,groupname::String,data::OrderedDict)
    _boundsmap = Dict{String,String}()
-   dds = DeferDataset{TDS}(r,groupname,data,_boundsmap)
+   isopen = fill(true)
+   dds = DeferDataset{TDS}(r,isopen,groupname,data,_boundsmap)
    if (r.mode == "r")
        initboundsmap!(dds)
    end
@@ -76,9 +77,13 @@ function DeferDataset(TDS,filename::AbstractString,mode = "r"; kwargs...)
     end
 end
 
+Base.isopen(dds::DeferDataset) = dds.isopen[]
 
-# files are not suppose to be open where using DeferDataset
-close(dds::DeferDataset) = nothing
+function close(dds::DeferDataset)
+    dds.isopen[] = false
+    return nothing
+end
+
 groupname(dds::DeferDataset) = dds.groupname
 path(dds::DeferDataset) = dds.r.filename
 varnames(dds::DeferDataset) = collect(keys(dds.data[:var]))
@@ -96,6 +101,8 @@ function Variable(f::Function, dv::DeferVariable{T,N,TDS}) where {T,N,TDS}
 end
 
 function variable(dds::DeferDataset{TDS},varname::AbstractString) where TDS
+    @assert isopen(dds)
+
     data = get(dds.data[:var],varname,nothing)
     if data == nothing
         error("Dataset $(dds.r.filename) does not contain the variable $varname")
