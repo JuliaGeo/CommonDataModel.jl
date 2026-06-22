@@ -1,0 +1,181 @@
+# # Select, group and reduce data sets with CommonDataModel
+#
+# As an example we use the NOAA OISST v2 dataset available at:
+# [https://psl.noaa.gov/thredds/fileServer/Datasets/noaa.oisst.v2.highres/sst.day.mean.2023.nc](https://psl.noaa.gov/thredds/fileServer/Datasets/noaa.oisst.v2.highres/sst.day.mean.2023.nc)
+
+using CommonDataModel: @select, @CF_str, @groupby, groupby
+using Dates
+using Downloads: download
+using CairoMakie # use GLMakie for interactive plots
+#using GLMakie
+using IntervalSets
+using NCDatasets
+using Statistics
+
+CairoMakie.enable_only_mime!("png") #hide
+
+# Some helper functions for plotting maps and timeseries with Makie .
+# Note that the variable `v` is an array type of CommonDataModel. All related
+# variables sharing the same dimensions (in particular coordinate variables)
+# can be access by subsetting `v` with the name of the related variable.
+function nicemaps(v; timeindex = 1, lon = v["lon"][:], lat = v["lat"][:], title="")
+    fig = Figure()
+    ax = Axis(fig[1, 1]; aspect = AxisAspect(1/cosd(mean(lat))), title)
+    hm = heatmap!(ax,lon,lat,v[:,:,timeindex])
+    Colorbar(fig[1,2],hm)
+    return fig
+end
+
+function nicetimeseries(v::AbstractVector; time = v["time"][:], title = nothing)
+    fig, ax, ln = lines(time,v[:])
+    if !isnothing(title)
+        ax.title[] = title
+    end
+    return fig
+end
+
+# Download the data file (unless already downloaded)
+# The dataset contains the variables `lon` (longitude), `lat` (latitude), `time`
+# and `sst` (sea surface temperature).
+
+# The service is a bit unreliable, the original URL is
+# https://psl.noaa.gov/thredds/fileServer/Datasets/noaa.oisst.v2.highres/sst.day.mean.2023.nc
+
+url = "http://data-assimilation.net/upload/Alex/SST_2023/sst.day.mean.2023.nc"
+
+fname = "sst.day.mean.2023.nc"
+if !isfile(fname)
+    download(url,fname)
+end
+
+# ## Select a subset by values from coordinate variables
+#
+# Open the dataset and access the variable `sst`. Select the domain from
+# 300°E to 360°E and 0°N to 46°N and the closest time instance to the
+# 1 April 2023.
+
+ds = NCDataset(fname)
+ncsst = ds["sst"]
+
+# `ncsst2` is a lazy view of the netCDF variable ncsst subjected to the following
+# selection criteria. The names `lon`, `lat` and `time` correspond to netCDF variables
+# in the datasets.
+# The operator `≈` looks for the nearest time instance.
+# Use e.g. `time ≈ DateTime(2023,4,1) ± Day(1)` to set a tolerance
+# The operators `≈` and `±` are typed as \approx and \pm followed by the TAB key.
+ncsst2 = @select(ncsst,300 <= lon <= 360 && 0 <= lat <= 46 && time ≈ DateTime(2023,4,1))
+
+nicemaps(ncsst2, title = "NA SST")
+
+# One can also select a subset by indices and by values. Here we load the
+# first time instance and the domain from 300°E to 360°E and 0°N to 46°N
+
+ncsst_first = view(ncsst,:,:,1)
+ncsst_na = @select(ncsst_first,300 <= lon <= 360 && 0 <= lat <= 46)
+nicemaps(ncsst_na)
+
+# Select all data from a given month: the julia function `Dates.month` is
+# first applied element-wise to all elements of time before comparing to 3.
+
+ncsst_march = @select(ncsst,Dates.month(time) == 3)
+nicemaps(ncsst_march, timeindex = 1, title = "SST 1st March 2023")
+
+
+# Select multiple months using e.g. an interval (from [IntervalSets](https://github.com/JuliaMath/IntervalSets.jl)). The upper bound of the interval is inclusive.
+# `∈` can be typed by writing `\in` directly followed by the TAB key.
+
+ncsst_march_april = @select(ncsst,Dates.month(time) ∈ 3..4)
+nicemaps(ncsst_march_april)
+
+# It is allowed to use julia functions in the data selection; here the `abs` function
+# is used to select the equalorial region between and 20°S and 20°N
+
+ncsst_equatorial = @select(ncsst,abs(lat) < 20)
+lon = ncsst_equatorial["lon"][:]
+lat = ncsst_equatorial["lat"][:]
+fig = Figure(size = (500, 200));
+ax = Axis(fig[1, 1]; aspect = AxisAspect(7));
+hm = heatmap!(ax,lon,lat,ncsst_equatorial[:,:,1]);
+Colorbar(fig[2,1],hm,vertical = false);
+fig
+
+# Extract the time series of the closest location to a given point
+
+ncsst_timeseries = @select(ncsst,lon ≈ 330 && lat ≈ 38)
+lon = ncsst_timeseries["lon"][:]
+lat = ncsst_timeseries["lat"][:]
+nicetimeseries(ncsst_timeseries, title = "SST at $(lon) °E and $(lat) °N")
+
+# Extract the time series of the closest point with a specified tolerance
+# If there is no data nearby an empty array is returned
+
+ncsst_outside = @select(ncsst,lon ≈ 330 && lat ≈ 93 ± 0.1)
+isempty(ncsst_outside)
+size(ncsst_outside)
+
+# Rather than selecting SST based on coordinates, we can also do the reverse:
+# select the longitude based on SST.
+# Find the longitudes where the SST exceeds 30 at the equator.
+# `sst` can contain missing values (e.g. on land).
+# `coalesce` is necessary here to replace the missing values by false in the boolean
+# expression.
+
+ds_equator = @select(ds,lat ≈ 0 && time ≈ DateTime(2023,1,1))
+lon_equator = @select(ds_equator,coalesce(sst > 30,false))["lon"]
+
+# The first 3 longitude valeus where SST exceeds 30°C at the equator for 2023-01-01
+
+lon_equator[1:3]
+
+# ## Grouping and reducing
+#
+# With the function [`groupby`](@ref CommonDataModel.groupby) and macro [`@groupby`](@ref CommonDataModel.@groupby) we can group the variable by a given criteria.
+# For each group, we can then apply a reducting function (`mean`, `sum`, `std`, ...).
+
+# For example group the SST by month and average per month:
+
+sst_mean = mean(@groupby(ncsst,Dates.Month(time)))
+size(sst_mean)
+
+# Instead of using the macro one can also use the function `groupby`:
+
+sst_mean = mean(groupby(ncsst,:time => Dates.Month))
+nicemaps(sst_mean, timeindex = 1, title = "Mean January SST")
+
+
+# Use custom julia function for grouping:
+# The [Atlantic hurricane season](https://en.wikipedia.org/w/index.php?title=Atlantic_hurricane_season&oldid=1189144955) is the period in a year, from June 1 through November 30, when tropical or subtropical cyclones are most likely to form in the North Atlantic Ocean.
+# The data will be grouped into two cases: `false` (time outside the Atlantic hurricane season) and `true` (time is within the Atlantic hurricane season).
+# We plot only the 2nd group.
+
+sst_na = @select(ncsst,300 <= lon <= 360 && 0 <= lat <= 46)
+sst_hs = mean(@groupby(sst_na,DateTime(year(time),6,1) <= time <= DateTime(year(time),11,30)))
+
+nicemaps(sst_hs,timeindex = 2, title = "mean SST during the Atlantic hurricane season")
+
+# Use a user defined function `is_atlantic_hurricane_season` without the `@groupby` macro:
+
+is_atlantic_hurricane_season(time) =
+    DateTime(year(time),6,1) <= time <= DateTime(year(time),11,30)
+
+sst_std_hs = std(groupby(sst_na,:time => is_atlantic_hurricane_season));
+
+nicemaps(sst_std_hs,timeindex = 2, title = "std SST during the Atlantic hurricane season")
+
+# Use a custom aggregation function to
+# estimate the probability that the temperature exceeds 26°C during
+# the Atlantic hurricane season
+
+using CommonDataModel: GroupedVariable
+prob_hot(x; dims=:) = mean(coalesce.(x .> 26,false); dims=dims)
+prob_hot(gv::GroupedVariable) = reduce(prob_hot,gv)
+
+is_atlantic_hurricane_season(time) =
+    DateTime(year(time),6,1) <= time <= DateTime(year(time),11,30)
+
+sst_my_mean = prob_hot(groupby(ncsst,:time => is_atlantic_hurricane_season));
+size(sst_my_mean)
+
+# The reducing will create two slices depending wether the condition is
+# false (1st slice) or true (2nd slice)
+nicemaps(sst_my_mean,timeindex=2, title = "probability(temp. > 26°C) during Atlantic hurricane season")
