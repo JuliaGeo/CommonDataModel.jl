@@ -163,9 +163,7 @@ function Base.show(io::IO,::MIME"text/plain",gv::GroupedVariable)
 end
 
 Base.show(io::IO,gv::GroupedVariable) = Base.show(io,MIME"text/plain",gv)
-Base.ndims(gv::GroupedVariable) = 1
 Base.size(gv::GroupedVariable) = (ngroups(gv.groupmap),)
-Base.eltype(gv::GroupedVariable{TV,TF,TGM,TM,TG}) where {TV,TF,TGM,TM,TG} = TG
 
 function Base.getindex(gv::GroupedVariable,k::Integer)
     class_k,indices = group(gv,k)
@@ -438,7 +436,6 @@ end
 
 # methods with ReducedGroupedVariable as main argument
 
-Base.ndims(gr::ReducedGroupedVariable) = ndims(gr.gv.v)
 Base.size(gr::ReducedGroupedVariable) = ntuple(ndims(gr)) do i
     if i == gr.gv.dim
         length(gr.gv)
