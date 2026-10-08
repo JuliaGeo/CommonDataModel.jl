@@ -4,7 +4,7 @@
 [![documentation dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliageo.github.io/CommonDataModel.jl/dev/)
 
 
-This package contains abstracts type definition for loading and manipulating GRIB, NetCDF, geoTiff and Zarr files. This package aims to follow the [Common Data Model](https://docs.unidata.ucar.edu/netcdf-c/current/netcdf_data_model.html) and the [CF (climate and forecast models) Metadata Conventions](https://cfconventions.org/).
+This package contains abstracts type definition for reading and writing GRIB, NetCDF, geoTiff and Zarr files. This package aims to follow the [Common Data Model](https://docs.unidata.ucar.edu/netcdf-c/current/netcdf_data_model.html) and the [CF (climate and forecast models) Metadata Conventions](https://cfconventions.org/).
 
 
 | Format  |      Package | read support | write support |
@@ -22,9 +22,8 @@ Features include:
 * query and edit metadata of arrays and datasets
 * virtually concatenating multiple files along a given dimension and merging virtually different datasets
 * create a virtual subset (`view`) by indices or by values of coordinate variables (`CommonDataModel.select`, `CommonDataModel.@select`)
+* supporting the [netCDF CF conventions](http://cfconventions.org/) for metadata
 * group, map and reduce a variable (`CommonDataModel.groupby`, `CommonDataModel.@groupby`) and rolling reductions like running means `CommonDataModel.rolling`)
-
-
 
 
 Here is minimal example for loading files using `CommonDataModel`:
